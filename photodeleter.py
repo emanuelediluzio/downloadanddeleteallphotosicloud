@@ -1,4 +1,6 @@
+
 import os
+import sys
 from pyicloud import PyiCloudService
 from tqdm import tqdm
 
@@ -17,6 +19,7 @@ def backup_and_clean_icloud(username, password, base_path):
         
         # Caricamento libreria foto
         print("Accesso alla libreria foto in corso (potrebbe richiedere tempo)...")
+        # Nota: api.photos.all restituisce un iteratore, lo convertiamo in lista per contarli e riusarli
         all_photos = list(api.photos.all)
         total_count = len(all_photos)
         print(f"Trovati {total_count} elementi.")
@@ -35,9 +38,10 @@ def backup_and_clean_icloud(username, password, base_path):
                 created = photo.created # Oggetto datetime
                 year = str(created.year)
                 month = f"{created.month:02d}"
+                
                 # Determina cartella media (Video o Foto)
-                # Nota: PyiCloud usa spesso nomi file o estensioni per distinguere
-                media_type = "Video" if photo.filename.lower().endswith(('.mp4', '.mov')) else "Foto"
+                # Controlliamo l'estensione del file
+                media_type = "Video" if photo.filename.lower().endswith(('.mp4', '.mov', '.avi', '.m4v')) else "Foto"
                 
                 # Creazione percorso cartelle: Base/Anno/Mese/Tipo/
                 folder_path = os.path.join(base_path, year, month, media_type)
@@ -48,22 +52,31 @@ def backup_and_clean_icloud(username, password, base_path):
                 
                 # Download effettivo se il file non esiste già
                 if not os.path.exists(file_path):
+                    download_data = photo.download()
+                    
                     with open(file_path, 'wb') as f:
-                        for chunk in photo.download().iter_content(chunk_size=1024*1024):
-                            if chunk:
-                                f.write(chunk)
+                        # FIX: Controllo se l'oggetto è iterabile (stream) o bytes (file intero)
+                        if hasattr(download_data, 'iter_content'):
+                            for chunk in download_data.iter_content(chunk_size=1024*1024):
+                                if chunk:
+                                    f.write(chunk)
+                        else:
+                            # Se non ha iter_content, è già l'oggetto bytes completo
+                            f.write(download_data)
+                            
                 downloaded_count += 1
             except Exception as e:
                 print(f"Errore nel download di {photo.filename}: {e}")
 
-        print(f"Download completato: {downloaded_count} file salvati.")
+        print(f"\nDownload completato: {downloaded_count} file salvati su {total_count}.")
 
         # --- FASE 2: ELIMINAZIONE ---
+        # Chiede conferma prima di cancellare
         confirm = input(f"\nATTENZIONE: Vuoi eliminare definitivamente {total_count} foto da iCloud? (scrivi 'SI' per procedere): ")
         
         if confirm.upper() == "SI":
             print("FASE 2: Eliminazione in corso...")
-            # Procediamo a blocchi per stabilità
+            # Procediamo a blocchi
             for photo in tqdm(all_photos, desc="Eliminazione", unit="file"):
                 try:
                     photo.delete()
@@ -71,16 +84,18 @@ def backup_and_clean_icloud(username, password, base_path):
                     print(f"Errore eliminazione {photo.filename}: {e}")
             print("Pulizia iCloud completata.")
         else:
-            print("Eliminazione annullata dall'utente. I file sono al sicuro sul PC.")
+            print("Eliminazione annullata dall'utente. I file sono salvati sul PC ma rimangono su iCloud.")
 
     except Exception as e:
-        print(f"Errore generale: {e}")
+        print(f"Errore generale nello script: {e}")
 
 # --- CONFIGURAZIONE ---
 if __name__ == "__main__":
+    # INSERISCI QUI I TUOI DATI
     EMAIL = 'tua_email@icloud.com'
     PASSWORD = 'tua_password'
-    # Inserisci qui il percorso dove vuoi salvare le foto (es: 'C:/Backup_iCloud' o '/Users/nome/Desktop/Foto')
+    
+    # Percorso di salvataggio (modifica se necessario)
     DESTINAZIONE = './Backup_iCloud' 
 
     backup_and_clean_icloud(EMAIL, PASSWORD, DESTINAZIONE)

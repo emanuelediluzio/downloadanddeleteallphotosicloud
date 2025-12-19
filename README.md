@@ -74,3 +74,14 @@ python nome_dello_script.py
 * **Verifica Spazio**: Assicurati di avere abbastanza spazio sul disco rigido locale prima di iniziare.
 * **Connessione**: Una connessione instabile potrebbe interrompere il download. Lo script è progettato per saltare i file già esistenti, rendendo possibile una ripresa del processo.
 * **Responsabilità**: L'uso della funzione di eliminazione è definitivo. Una volta confermato con `SI`, i file verranno spostati nel cestino di iCloud o eliminati permanentemente a seconda delle impostazioni del tuo account.
+
+## 🔮 Roadmap / To-Do
+
+Sto lavorando per espandere le capacità di backup oltre il disco locale. Le prossime funzionalità includeranno:
+
+* **☁️ Supporto Multi-Cloud**: Integrazione diretta per spostare i file su servizi di terze parti:
+    * **Google Drive**
+    * **Microsoft OneDrive**
+    * **Dropbox**
+* **🔄 Streaming Transfer**: Implementazione di un sistema "pipe" per trasferire i dati da iCloud al Cloud di destinazione senza dover salvare permanentemente i file sul disco locale (riducendo l'uso dello spazio temporaneo).
+* **🔐 Crittografia (Opzionale)**: Possibilità di criptare i file prima dell'upload sul cloud di destinazione.

@@ -1,6 +1,8 @@
 import os
 import sys
+import time
 from pyicloud import PyiCloudService
+from pyicloud.exceptions import PyiCloudAPIResponseException
 from tqdm import tqdm
 
 def backup_and_clean_icloud(username, password, base_path):
@@ -8,7 +10,6 @@ def backup_and_clean_icloud(username, password, base_path):
         print(f"--- Inizio Script ---")
         api = PyiCloudService(username, password)
 
-        # Gestione 2FA
         if api.requires_2fa:
             print("Autenticazione a due fattori richiesta.")
             code = input("Inserisci il codice ricevuto sul tuo dispositivo: ")
@@ -16,7 +17,6 @@ def backup_and_clean_icloud(username, password, base_path):
                 print("Codice non valido. Uscita.")
                 return
         
-        # Caricamento libreria foto
         print("Accesso alla libreria foto in corso (attendere prego)...")
         all_photos = list(api.photos.all)
         total_count = len(all_photos)
@@ -32,39 +32,57 @@ def backup_and_clean_icloud(username, password, base_path):
         skipped_count = 0
         
         for photo in tqdm(all_photos, desc="Download/Verifica", unit="file"):
-            try:
-                # Metadati per cartelle
-                created = photo.created
-                year = str(created.year)
-                month = f"{created.month:02d}"
-                media_type = "Video" if photo.filename.lower().endswith(('.mp4', '.mov', '.avi', '.m4v')) else "Foto"
-                
-                # Crea cartelle (senza sovrascrivere se esistono)
-                folder_path = os.path.join(base_path, year, month, media_type)
-                os.makedirs(folder_path, exist_ok=True)
+            # Logica di ritentativo (Retry Logic)
+            max_retries = 5
+            attempt = 0
+            success = False
 
-                file_path = os.path.join(folder_path, photo.filename)
-                
-                # Controllo esistenza file
-                if os.path.exists(file_path):
-                    skipped_count += 1
-                    continue # Salta al prossimo se esiste
+            while attempt < max_retries and not success:
+                try:
+                    # Preparazione percorsi
+                    created = photo.created
+                    year = str(created.year)
+                    month = f"{created.month:02d}"
+                    media_type = "Video" if photo.filename.lower().endswith(('.mp4', '.mov', '.avi', '.m4v')) else "Foto"
+                    
+                    folder_path = os.path.join(base_path, year, month, media_type)
+                    os.makedirs(folder_path, exist_ok=True)
+                    file_path = os.path.join(folder_path, photo.filename)
+                    
+                    # Controllo esistenza
+                    if os.path.exists(file_path):
+                        skipped_count += 1
+                        success = True
+                        continue
 
-                # Download
-                download_data = photo.download()
-                
-                with open(file_path, 'wb') as f:
-                    if hasattr(download_data, 'iter_content'):
-                        for chunk in download_data.iter_content(chunk_size=1024*1024):
-                            if chunk:
-                                f.write(chunk)
+                    # Download
+                    download_data = photo.download()
+                    
+                    with open(file_path, 'wb') as f:
+                        if hasattr(download_data, 'iter_content'):
+                            for chunk in download_data.iter_content(chunk_size=1024*1024):
+                                if chunk:
+                                    f.write(chunk)
+                        else:
+                            f.write(download_data)
+                    
+                    downloaded_count += 1
+                    success = True
+                    # Piccola pausa per non sovraccaricare il server
+                    time.sleep(0.5)
+
+                except PyiCloudAPIResponseException as e:
+                    if "503" in str(e):
+                        attempt += 1
+                        wait_time = 30 * attempt # Aumenta l'attesa ogni volta (30s, 60s, 90s...)
+                        tqdm.write(f"Server occupato (503). Attendo {wait_time} secondi e riprovo...")
+                        time.sleep(wait_time)
                     else:
-                        f.write(download_data)
-                        
-                downloaded_count += 1
-                
-            except Exception as e:
-                tqdm.write(f"Errore nel download di {photo.filename}: {e}")
+                        tqdm.write(f"Errore API non gestibile per {photo.filename}: {e}")
+                        break # Esce dal while e passa alla prossima foto
+                except Exception as e:
+                    tqdm.write(f"Errore generico {photo.filename}: {e}")
+                    break
 
         print(f"\n--- RIEPILOGO ---")
         print(f"Scaricati: {downloaded_count}")
@@ -74,10 +92,22 @@ def backup_and_clean_icloud(username, password, base_path):
         print("\nFASE 2: Eliminazione automatica da iCloud avviata...")
         
         for photo in tqdm(all_photos, desc="Eliminazione", unit="file"):
-            try:
-                photo.delete()
-            except Exception as e:
-                tqdm.write(f"Errore eliminazione {photo.filename}: {e}")
+            attempt = 0
+            success = False
+            while attempt < 3 and not success:
+                try:
+                    photo.delete()
+                    success = True
+                except PyiCloudAPIResponseException as e:
+                    if "503" in str(e):
+                        attempt += 1
+                        tqdm.write(f"Server occupato durante eliminazione. Attendo 10s...")
+                        time.sleep(10)
+                    else:
+                        break
+                except Exception as e:
+                    tqdm.write(f"Errore eliminazione {photo.filename}: {e}")
+                    break
                 
         print("Pulizia iCloud completata.")
 

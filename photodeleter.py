@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 def backup_and_clean_icloud(username, password, base_path):
     try:
-        print(f"--- Inizio Script ---")
+        print(f"--- Inizio Script Sicuro ---")
         api = PyiCloudService(username, password)
 
         if api.requires_2fa:
@@ -26,20 +26,18 @@ def backup_and_clean_icloud(username, password, base_path):
             print("Nessun file trovato. Fine.")
             return
 
-        # --- FASE 1: DOWNLOAD ---
+        # --- FASE 1: DOWNLOAD SICURO ---
         print(f"\nFASE 1: Download in corso in: {base_path}")
+        print("NOTA: Lo script NON salterà nessun file. In caso di errore riproverà all'infinito.")
+        
         downloaded_count = 0
         skipped_count = 0
         
-        for photo in tqdm(all_photos, desc="Download/Verifica", unit="file"):
-            # Logica di ritentativo (Retry Logic)
-            max_retries = 5
-            attempt = 0
-            success = False
-
-            while attempt < max_retries and not success:
+        for photo in tqdm(all_photos, desc="Avanzamento Globale", unit="file"):
+            # Ciclo infinito per ogni singolo file: non esce finché non ha successo
+            while True:
                 try:
-                    # Preparazione percorsi
+                    # 1. Preparazione percorsi
                     created = photo.created
                     year = str(created.year)
                     month = f"{created.month:02d}"
@@ -49,13 +47,17 @@ def backup_and_clean_icloud(username, password, base_path):
                     os.makedirs(folder_path, exist_ok=True)
                     file_path = os.path.join(folder_path, photo.filename)
                     
-                    # Controllo esistenza
+                    # 2. Controllo se file esiste già (per non riscaricarlo)
                     if os.path.exists(file_path):
-                        skipped_count += 1
-                        success = True
-                        continue
+                        # Controllo opzionale: se il file è 0 byte (corrotto), lo riscarica
+                        if os.path.getsize(file_path) > 0:
+                            skipped_count += 1
+                            break # ESCE DAL WHILE (passa al prossimo file)
+                        else:
+                            tqdm.write(f"Trovato file vuoto/corrotto {photo.filename}, lo riscarico.")
+                            os.remove(file_path)
 
-                    # Download
+                    # 3. Tentativo di Download
                     download_data = photo.download()
                     
                     with open(file_path, 'wb') as f:
@@ -66,53 +68,59 @@ def backup_and_clean_icloud(username, password, base_path):
                         else:
                             f.write(download_data)
                     
+                    # Se arriva qui, ha finito senza errori
                     downloaded_count += 1
-                    success = True
-                    # Piccola pausa per non sovraccaricare il server
-                    time.sleep(0.5)
+                    time.sleep(0.2) # Piccolissima pausa di cortesia
+                    break # ESCE DAL WHILE (Successo)
 
-                except PyiCloudAPIResponseException as e:
-                    if "503" in str(e):
-                        attempt += 1
-                        wait_time = 30 * attempt # Aumenta l'attesa ogni volta (30s, 60s, 90s...)
-                        tqdm.write(f"Server occupato (503). Attendo {wait_time} secondi e riprovo...")
-                        time.sleep(wait_time)
-                    else:
-                        tqdm.write(f"Errore API non gestibile per {photo.filename}: {e}")
-                        break # Esce dal while e passa alla prossima foto
                 except Exception as e:
-                    tqdm.write(f"Errore generico {photo.filename}: {e}")
-                    break
-
-        print(f"\n--- RIEPILOGO ---")
-        print(f"Scaricati: {downloaded_count}")
-        print(f"Saltati (già presenti): {skipped_count}")
-
-        # --- FASE 2: ELIMINAZIONE AUTOMATICA ---
-        print("\nFASE 2: Eliminazione automatica da iCloud avviata...")
-        
-        for photo in tqdm(all_photos, desc="Eliminazione", unit="file"):
-            attempt = 0
-            success = False
-            while attempt < 3 and not success:
-                try:
-                    photo.delete()
-                    success = True
-                except PyiCloudAPIResponseException as e:
-                    if "503" in str(e):
-                        attempt += 1
-                        tqdm.write(f"Server occupato durante eliminazione. Attendo 10s...")
+                    # Se c'è un errore, NON usciamo dal while. Aspettiamo e riproviamo.
+                    error_msg = str(e)
+                    wait_time = 10 # Secondi di attesa base
+                    
+                    if "503" in error_msg or "Service Unavailable" in error_msg:
+                        tqdm.write(f"Server Apple occupato (503) per {photo.filename}. Riprovo tra 30 secondi...")
+                        time.sleep(30)
+                    elif "Connection" in error_msg or "socket" in error_msg:
+                        tqdm.write(f"Errore connessione per {photo.filename}. Riprovo tra 10 secondi...")
                         time.sleep(10)
                     else:
-                        break
-                except Exception as e:
-                    tqdm.write(f"Errore eliminazione {photo.filename}: {e}")
-                    break
-                
-        print("Pulizia iCloud completata.")
+                        tqdm.write(f"Errore generico: {error_msg}. Riprovo tra 5 secondi...")
+                        time.sleep(5)
+                    # Il ciclo 'while True' ricomincia da capo per questa foto
+
+        print(f"\n--- RIEPILOGO DOWNLOAD ---")
+        print(f"Scaricati con successo: {downloaded_count}")
+        print(f"Già presenti (saltati): {skipped_count}")
+        print(f"Totale: {total_count}")
+        print("Tutti i file sono stati scaricati e sono al sicuro sul tuo PC.")
+
+        # --- FASE 2: ELIMINAZIONE MANUALE ---
+        print("\n" + "="*50)
+        confirm = input(f"ATTENZIONE: Vuoi eliminare definitivamente le {total_count} foto DA ICLOUD?\nLe copie sul tuo PC NON verranno toccate.\nScrivi 'SI' per procedere alla cancellazione, qualsiasi altro tasto per uscire: ")
+        print("="*50 + "\n")
+        
+        if confirm.upper() == "SI":
+            print("FASE 2: Eliminazione in corso...")
+            for photo in tqdm(all_photos, desc="Eliminazione", unit="file"):
+                # Anche qui mettiamo un retry per essere sicuri che cancelli
+                while True:
+                    try:
+                        photo.delete()
+                        break # Cancellato, passa al prossimo
+                    except Exception as e:
+                        if "503" in str(e):
+                            tqdm.write("Server occupato durante eliminazione. Attendo...")
+                            time.sleep(10)
+                        else:
+                            tqdm.write(f"Impossibile eliminare {photo.filename}: {e}. Salto.")
+                            break # Se non riesce a cancellare, qui saltiamo per non bloccare tutto (opzionale)
+            print("Pulizia iCloud completata.")
+        else:
+            print("Operazione conclusa. I file sono sul tuo PC, nessuna foto è stata cancellata da iCloud.")
 
     except Exception as e:
-        print(f"Errore generale nello script: {e}")
+        print(f"\nERRORE CRITICO DELLO SCRIPT: {e}")
 
 # --- CONFIGURAZIONE ---
 if __name__ == "__main__":

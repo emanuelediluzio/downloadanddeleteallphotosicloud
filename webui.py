@@ -234,6 +234,52 @@ def api_miniatura(id_foto):
     return send_file(io.BytesIO(dati), mimetype="image/jpeg")
 
 
+def _mimetype_video(nome: str) -> str:
+    nome = nome.lower()
+    if nome.endswith(".mov"):
+        return "video/quicktime"
+    if nome.endswith((".m4v", ".mp4")):
+        return "video/mp4"
+    if nome.endswith(".avi"):
+        return "video/x-msvideo"
+    return "application/octet-stream"
+
+
+@app.route("/api/video/<int:id_foto>")
+def api_video(id_foto):
+    """Streamma il video vero e proprio, per l'anteprima nella pagina."""
+    if id_foto < 0 or id_foto >= len(stato.foto):
+        abort(404)
+    if stato.meta[id_foto]["tipo"] != "video":
+        abort(400)
+
+    foto = stato.foto[id_foto]
+    dati = None
+    # "medium_video" e' una versione compressa, adatta allo streaming nel
+    # browser; "original" come ultima spiaggia se non fosse disponibile.
+    for versione in ("medium_video", "original"):
+        try:
+            candidato = foto.download(versione)
+        except Exception:
+            continue
+        if not candidato:
+            continue
+        if hasattr(candidato, "read"):
+            candidato = candidato.read()
+        if candidato:
+            dati = candidato
+            break
+
+    if not dati:
+        abort(404)
+
+    return send_file(
+        io.BytesIO(dati),
+        mimetype=_mimetype_video(stato.meta[id_foto]["nome"]),
+        conditional=True,  # supporta le richieste "Range" per avanzare nel video
+    )
+
+
 @app.route("/api/operazione", methods=["POST"])
 def api_operazione():
     """Avvia scaricamento o eliminazione in background."""

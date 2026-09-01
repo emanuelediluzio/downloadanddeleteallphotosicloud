@@ -69,9 +69,12 @@ function disegnaGriglia() {
     cella.appendChild(img);
 
     if (el.tipo === "video") {
-      const segno = document.createElement("div");
+      const segno = document.createElement("button");
+      segno.type = "button";
       segno.className = "segno-video";
+      segno.title = "Riproduci l'anteprima";
       segno.textContent = "▶ video";
+      segno.dataset.id = el.id;
       cella.appendChild(segno);
     }
 
@@ -118,6 +121,13 @@ function applicaClassi() {
 }
 
 griglia.addEventListener("click", (evento) => {
+  const bottoneVideo = evento.target.closest(".segno-video");
+  if (bottoneVideo) {
+    evento.stopPropagation();
+    apriAnteprimaVideo(Number(bottoneVideo.dataset.id));
+    return;
+  }
+
   const cella = evento.target.closest(".cella");
   if (!cella) return;
 
@@ -361,6 +371,37 @@ async function avviaOperazione(azione) {
 
 document.getElementById("avanzamento-chiudi").addEventListener("click", () => {
   modaleAvanzamento.hidden = true;
+});
+
+// ------------------------------------------------------- anteprima video
+const modaleVideo = document.getElementById("modale-video");
+const playerVideo = document.getElementById("player-video");
+const videoErrore = document.getElementById("video-errore");
+
+function apriAnteprimaVideo(id) {
+  videoErrore.hidden = true;
+  playerVideo.hidden = false;
+  playerVideo.src = `/api/video/${id}?t=${encodeURIComponent(TOKEN)}`;
+  modaleVideo.hidden = false;
+  playerVideo.play().catch(() => {}); // l'autoplay puo' essere bloccato dal browser, non e' un errore
+}
+
+function chiudiAnteprimaVideo() {
+  playerVideo.pause();
+  playerVideo.removeAttribute("src");
+  playerVideo.load();
+  modaleVideo.hidden = true;
+}
+
+playerVideo.addEventListener("error", () => {
+  playerVideo.hidden = true;
+  videoErrore.hidden = false;
+});
+
+document.getElementById("video-chiudi").addEventListener("click", chiudiAnteprimaVideo);
+
+modaleVideo.addEventListener("click", (evento) => {
+  if (evento.target === modaleVideo) chiudiAnteprimaVideo(); // click sullo sfondo
 });
 
 // ---------------------------------------------------------------- avvio

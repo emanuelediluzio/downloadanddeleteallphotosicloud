@@ -15,6 +15,7 @@ Si può usare in **due modi**: con un'**interfaccia grafica** nel browser (vedi 
 | | |
 |---|---|
 | 🖼️ **Interfaccia grafica** | Vedi le miniature delle tue foto e scegli col mouse cosa scaricare o eliminare |
+| ▶️ **Anteprima video** | Clicca `▶ video` su un elemento per riprodurlo direttamente nel browser, senza scaricarlo |
 | 🎯 **Selezione mirata** | Filtra **da che data a che data** e **solo foto / solo video** |
 | 📅 **Organizzazione automatica** | I file vengono ordinati in `Anno / Mese / Foto o Video` |
 | ⏸️ **Riprendibile** | I file già scaricati vengono saltati: se si interrompe, basta rilanciarlo |
@@ -234,6 +235,10 @@ Ecco tutti i modi per selezionare:
 **Selezione trascinando il rettangolo:**
 
 ![Selezione trascinando](docs/web-2-trascinamento.png)
+
+**Anteprima video**: sui video compare in alto a sinistra il pulsante `▶ video` — cliccalo per riprodurre un'anteprima direttamente nel browser (non seleziona la cella, quello resta un click normale sul resto del riquadro):
+
+![Riproduzione video](docs/web-5-video.png)
 
 ## Passo 11 — Filtra per data e tipo
 
@@ -505,4 +510,3 @@ python docs/generate_screenshots.py
 * **☁️ Supporto Multi-Cloud**: caricamento diretto su Google Drive, OneDrive e Dropbox.
 * **🔄 Streaming Transfer**: trasferimento "pipe" da iCloud al cloud di destinazione senza salvare in locale.
 * **🔐 Crittografia (opzionale)**: cifratura dei file prima dell'upload sul cloud di destinazione.
-* **▶️ Anteprima video** nell'interfaccia grafica.

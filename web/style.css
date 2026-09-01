@@ -150,9 +150,18 @@ input[type=date], select {
   position: absolute;
   top: 6px; left: 6px;
   background: rgba(0,0,0,.65);
+  border: none;
+  color: var(--testo);
   border-radius: 4px;
-  padding: 1px 5px;
+  padding: 3px 7px;
   font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  z-index: 2;
+}
+.segno-video:hover {
+  background: var(--ciano);
+  color: #0b1016;
 }
 
 .vuoto {
@@ -192,6 +201,18 @@ input[type=date], select {
   width: min(520px, 92vw);
 }
 .riquadro h2 { margin: 0 0 12px; font-size: 17px; }
+.riquadro-video { width: min(720px, 92vw); }
+.riquadro-video video {
+  width: 100%;
+  max-height: 70vh;
+  border-radius: 8px;
+  background: #000;
+  display: block;
+}
+.errore { color: var(--rosso); }
+/* Come per .modale[hidden]: senza questa regola il "display: block"
+   del <video> vincerebbe sull'attributo hidden. */
+.riquadro-video video[hidden] { display: none; }
 .riquadro p { margin: 8px 0; }
 .nota { color: var(--testo-tenue); font-size: 13px; }
 .spunta { display: flex; align-items: center; gap: 8px; margin: 16px 0; font-size: 13px; }

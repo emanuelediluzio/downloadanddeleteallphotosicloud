@@ -12,6 +12,7 @@ Script Python da terminale per **scaricare l'intera libreria iCloud Photos** sul
 
 | | |
 |---|---|
+| 🎯 **Selezione mirata** | Scegli **da che data a che data** e se prendere **solo foto o solo video**: puoi svuotare iCloud un periodo alla volta |
 | 📅 **Organizzazione automatica** | I file vengono ordinati in `Anno / Mese / Foto o Video`, non ammassati in un'unica cartella |
 | ⏸️ **Riprendibile** | I file già scaricati vengono saltati: se il backup si interrompe, basta rilanciarlo |
 | 📊 **Barre di progresso** | Contatore file, tempo trascorso e **tempo rimanente stimato**, sia in download che in eliminazione |
@@ -238,7 +239,36 @@ Scrivi quelle 6 cifre nel terminale e premi Invio.
 
 ---
 
-## Passo 9 — Aspetta il download (Fase 1)
+## Passo 9 — Scegli cosa scaricare ed eliminare
+
+Prima di iniziare, lo script ti chiede **quali elementi** vuoi elaborare. Puoi lavorare su tutta la libreria oppure solo su una parte.
+
+**Prima domanda — il periodo:**
+```text
+Quali elementi vuoi elaborare?
+  1) Tutta la libreria
+  2) Solo un intervallo di date
+Scelta [1/2] (1):
+```
+* Premi **Invio** (o scrivi `1`) per prendere tutto.
+* Scrivi **`2`** per scegliere un periodo: ti verranno chieste una **data di inizio** e una **data di fine**, da scrivere nel formato `GG/MM/AAAA` (per esempio `01/01/2020`). Se premi Invio senza scrivere niente, quel limite non viene applicato: lasciando vuota la data di fine, per esempio, prende tutto "dal 01/01/2020 in poi".
+
+**Seconda domanda — il tipo di file:**
+```text
+Quale tipo di media?
+  1) Foto e video
+  2) Solo foto
+  3) Solo video
+Scelta [1/2/3] (1):
+```
+
+Lo script ti dirà quanti elementi hai selezionato, per esempio `Selezionati 412 elementi su 3847`.
+
+> 🔒 **La selezione vale per entrambe le fasi.** Se scegli "solo il 2020", verranno scaricate *e* poi eliminate soltanto le foto del 2020: **tutto il resto della libreria iCloud non viene toccato**. Questo ti permette di svuotare iCloud un pezzo alla volta, in sicurezza.
+
+---
+
+## Passo 10 — Aspetta il download (Fase 1)
 
 Parte il download. Vedrai una barra che avanza:
 
@@ -257,7 +287,7 @@ Cosa significano i numeri, da sinistra a destra:
 
 ---
 
-## Passo 10 — Controlla il riepilogo
+## Passo 11 — Controlla il riepilogo
 
 A fine download compare la tabella riassuntiva:
 
@@ -267,7 +297,7 @@ A fine download compare la tabella riassuntiva:
 
 ---
 
-## Passo 11 — Decidi se cancellare da iCloud (Fase 2)
+## Passo 12 — Decidi se cancellare da iCloud (Fase 2)
 
 Lo script chiede: **`Procedere con l'eliminazione da iCloud? [y/n] (n):`**
 
@@ -282,7 +312,7 @@ Se hai scelto `y`, parte la seconda barra di progresso e alla fine vedrai `Puliz
 
 ---
 
-## Passo 12 — Dove sono finite le mie foto?
+## Passo 13 — Dove sono finite le mie foto?
 
 Nella cartella che hai scelto, ordinate per anno, mese e tipo:
 
@@ -343,6 +373,38 @@ Email e cartella di destinazione te le ricorderà lui: basta premere Invio per c
 ---
 
 # ⚙️ Uso avanzato
+
+## Selezione da riga di comando
+
+Puoi passare i filtri direttamente al comando, saltando le domande del Passo 9:
+
+```bash
+# Solo il 2020, foto e video
+python3 photodeleter.py --da 01/01/2020 --a 31/12/2020
+
+# Tutti i video precedenti al 2019
+python3 photodeleter.py --a 31/12/2018 --tipo video
+
+# Solo le foto (di qualsiasi data)
+python3 photodeleter.py --tipo foto
+
+# Dal 2023 in poi
+python3 photodeleter.py --da 01/01/2023
+```
+
+| Argomento | Descrizione |
+|---|---|
+| `--da GG/MM/AAAA` | Elabora solo gli elementi da questa data in poi |
+| `--a GG/MM/AAAA` | Elabora solo gli elementi fino a questa data |
+| `--tipo {tutti,foto,video}` | Limita a sole foto o soli video |
+
+Sono accettati anche i formati `AAAA-MM-GG` e `GG-MM-AAAA`. Le date sono **inclusive**: `--da 01/01/2020 --a 31/12/2020` comprende sia il 1° gennaio sia il 31 dicembre.
+
+Per l'elenco completo delle opzioni:
+
+```bash
+python3 photodeleter.py --help
+```
 
 ## Variabili d'ambiente (per automazioni)
 

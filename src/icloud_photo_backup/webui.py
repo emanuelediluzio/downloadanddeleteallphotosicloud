@@ -20,7 +20,7 @@ from datetime import datetime
 
 from flask import Flask, abort, jsonify, request, send_file, send_from_directory
 
-from photodeleter import (
+from .cli import (
     console,
     filter_photos,
     is_video,

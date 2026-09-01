@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "icloud-photo-backup-cleaner"
+version = "1.0.0"
+description = "Backup locale della libreria iCloud Photos e pulizia sicura del cloud, da terminale o interfaccia web"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{ name = "emanuelediluzio" }]
+keywords = ["icloud", "photos", "backup", "pyicloud"]
+classifiers = [
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Intended Audience :: End Users/Desktop",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: System :: Archiving :: Backup",
+]
+dependencies = [
+    "pyicloud",
+    "rich",
+    "flask",
+]
+
+[project.urls]
+Homepage = "https://github.com/emanuelediluzio/downloadanddeleteallphotosicloud"
+Repository = "https://github.com/emanuelediluzio/downloadanddeleteallphotosicloud"
+
+[project.scripts]
+icloud-photo-backup = "icloud_photo_backup.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+icloud_photo_backup = ["web/*"]

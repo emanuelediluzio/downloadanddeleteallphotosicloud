@@ -5,6 +5,10 @@ __pycache__/
 .venv/
 venv/
 
+# Build del pacchetto (pip/pipx)
+build/
+dist/
+
 # Backup foto scaricate (non deve finire nel repo)
 Backup_iCloud/
 

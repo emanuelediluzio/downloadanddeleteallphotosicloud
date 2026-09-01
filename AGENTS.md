@@ -6,32 +6,35 @@ Guida operativa per agenti AI (Claude Code, Copilot, Cursor, ecc.) che lavorano 
 
 Uno script Python che scarica l'intera libreria iCloud Photos in locale e, dopo conferma, la elimina dal cloud. Ha due interfacce che condividono la stessa logica:
 
-* **Terminale** (`photodeleter.py`) — usa [`rich`](https://github.com/Textualize/rich) per barre di progresso, pannelli e prompt.
-* **Web** (`photodeleter.py --web` avvia `webui.py`) — server Flask locale (`127.0.0.1` soltanto) con frontend statico in `web/`, per selezionare le foto col mouse.
+* **Terminale** (`src/icloud_photo_backup/cli.py`) — usa [`rich`](https://github.com/Textualize/rich) per barre di progresso, pannelli e prompt.
+* **Web** (`--web` avvia `src/icloud_photo_backup/webui.py`) — server Flask locale (`127.0.0.1` soltanto) con frontend statico in `src/icloud_photo_backup/web/`, per selezionare le foto col mouse.
+
+Il progetto è impacchettato come pacchetto Python vero e proprio (`pyproject.toml`, src-layout), installabile con `pip install .`/`pipx install .` e utilizzabile come comando `icloud-photo-backup`. Il file `photodeleter.py` in root è rimasto **solo** come shim di compatibilità per chi non installa il pacchetto (`python3 photodeleter.py`, come documentato nel README) — non contiene più logica, aggiunge solo `src/` al `sys.path` e chiama `icloud_photo_backup.cli.main()`.
 
 Tutto il testo rivolto all'utente (messaggi, README, commenti nel codice quando servono) è **in italiano**. Mantieni questa convenzione in ogni modifica.
 
 ## Struttura del repository
 
 ```
-photodeleter.py      Entry point CLI: auth, download, eliminazione, filtri per data/tipo, argparse
-webui.py              Server Flask per l'interfaccia web (importa funzioni da photodeleter.py)
-web/index.html        Markup della pagina web
-web/style.css         Stile (tema scuro, mobile-unfriendly per design: uso desktop)
-web/app.js            Logica client: selezione col mouse, filtri, polling delle operazioni, player video
-docs/                 Screenshot per il README + generate_screenshots.py per rigenerare quelli del terminale
-requirements.txt      pyicloud, rich, flask
-.gitignore            Esclude Backup_iCloud/, .miniature/, .upload_tmp/, __pycache__/, .venv/
+pyproject.toml                        Metadata del pacchetto, entry point "icloud-photo-backup"
+photodeleter.py                       Shim di compatibilita' (vedi sopra), NON contiene logica
+src/icloud_photo_backup/__init__.py   __version__
+src/icloud_photo_backup/cli.py        Entry point vero: auth, download, eliminazione, filtri, argparse, main()
+src/icloud_photo_backup/webui.py      Server Flask per l'interfaccia web (importa da .cli)
+src/icloud_photo_backup/web/          Markup/stile/JS della pagina web (inclusi nel pacchetto come package-data)
+docs/                                 Screenshot per il README + generate_screenshots.py per rigenerare quelli del terminale
+requirements.txt                      pyicloud, rich, flask (per chi usa lo shim senza installare il pacchetto)
+.gitignore                            Esclude Backup_iCloud/, .miniature/, .upload_tmp/, __pycache__/, .venv/, build/, *.egg-info/
 ```
 
-`webui.py` importa direttamente da `photodeleter.py` (stessa cartella, nessun package): `filter_photos`, `is_video`, `parse_date`, `safe_filename`, `wait_after_error`, `is_fatal_error`, `MAX_RETRIES_ON_FATAL_LIKE`, `console`. Se rinomini o sposti una di queste funzioni, aggiorna anche `webui.py`.
+`webui.py` importa da `.cli` (import relativo, stesso package): `filter_photos`, `is_video`, `parse_date`, `safe_filename`, `wait_after_error`, `is_fatal_error`, `MAX_RETRIES_ON_FATAL_LIKE`, `console`. Se rinomini o sposti una di queste funzioni, aggiorna anche `webui.py`. Il percorso degli asset web (`WEB_DIR` in `webui.py`) è calcolato relativo a `__file__`, quindi funziona identico sia in sviluppo sia da pacchetto installato (verificato: dopo `pip install`, `WEB_DIR` punta dentro `site-packages/icloud_photo_backup/web/`, non alla cartella sorgente).
 
 ## Setup ambiente
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
-python3 -m py_compile photodeleter.py webui.py   # verifica minima dopo ogni modifica
+python3 -m py_compile src/icloud_photo_backup/*.py photodeleter.py   # verifica minima dopo ogni modifica
 ```
 
 Non esiste una suite di test automatizzata nel repo (nessuna cartella `tests/`). La verifica si fa con script ad-hoc — vedi sotto.
@@ -66,13 +69,13 @@ class FotoFinta:
 | `medium_video` | n/d | file video comprimibile per streaming |
 | `original` | file originale | file originale |
 
-Questo ha già causato un bug reale (miniature dei video rotte, corretto in `webui.py::api_miniatura` — vedi il commit "Corregge le miniature dei video"). **Se tocchi il codice delle miniature o del player video, un finto oggetto che restituisce sempre la stessa cosa per ogni `version` non basta**: deve differenziare il comportamento come nella tabella sopra, altrimenti il test passa ma il codice reale si rompe.
+Questo ha già causato un bug reale (miniature dei video rotte, corretto in `icloud_photo_backup/webui.py::api_miniatura` — vedi il commit "Corregge le miniature dei video"). **Se tocchi il codice delle miniature o del player video, un finto oggetto che restituisce sempre la stessa cosa per ogni `version` non basta**: deve differenziare il comportamento come nella tabella sopra, altrimenti il test passa ma il codice reale si rompe.
 
-`webui.py` valida comunque i byte ricevuti con `_sembra_immagine()` (controllo magic number JPEG/PNG/WEBP) prima di servirli o metterli in cache, come rete di sicurezza.
+`icloud_photo_backup/webui.py` valida comunque i byte ricevuti con `_sembra_immagine()` (controllo magic number JPEG/PNG/WEBP) prima di servirli o metterli in cache, come rete di sicurezza.
 
 ### Test del cuore della logica (download/retry/eliminazione)
 
-Pattern collaudato: creare `FotoFinta` con `fail_times` (quante volte simulare un errore 503 prima di riuscire) e `fatal` (errore 401/403 permanente), chiamare direttamente `download_photos()` / `filter_photos()` / `delete_photos()` da `photodeleter.py`, e verificare:
+Pattern collaudato: creare `FotoFinta` con `fail_times` (quante volte simulare un errore 503 prima di riuscire) e `fatal` (errore 401/403 permanente), chiamare direttamente `download_photos()` / `filter_photos()` / `delete_photos()` da `icloud_photo_backup.cli`, e verificare:
 * la struttura di cartelle generata (`Anno/Mese/Foto|Video/`)
 * il numero di tentativi (`MAX_RETRIES_ON_FATAL_LIKE = 3` per errori fatali, retry illimitato per errori transitori)
 * che un file fallito nel download resti **escluso** dalla successiva eliminazione (invariante di sicurezza: non si cancella da iCloud nulla che non sia stato scaricato)
@@ -93,8 +96,8 @@ Tutti questi script di test sono **usa e getta**: vivono nella scratchpad direct
 ## Convenzioni di sicurezza da NON violare
 
 * **Nessuna credenziale hardcoded.** Email/password sempre da prompt (`rich.Prompt.ask(password=True)`) o variabili d'ambiente (`ICLOUD_EMAIL`, `ICLOUD_PASSWORD`, `ICLOUD_BACKUP_PATH`).
-* **La password non va mai salvata su disco.** `~/.icloud_photodeleter_config.json` salva solo email e cartella di destinazione (vedi `load_saved_config`/`save_config` in `photodeleter.py`).
-* **Il server web ascolta solo su `127.0.0.1`** e rifiuta richieste con header `Origin` esterno (protezione CSRF minimale, vedi `controlla_accesso()` in `webui.py`). Non estendere l'ascolto a `0.0.0.0` senza aggiungere autenticazione vera.
+* **La password non va mai salvata su disco.** `~/.icloud_photodeleter_config.json` salva solo email e cartella di destinazione (vedi `load_saved_config`/`save_config` in `icloud_photo_backup/cli.py`).
+* **Il server web ascolta solo su `127.0.0.1`** e rifiuta richieste con header `Origin` esterno (protezione CSRF minimale, vedi `controlla_accesso()` in `icloud_photo_backup/webui.py`). Non estendere l'ascolto a `0.0.0.0` senza aggiungere autenticazione vera.
 * **Il token di accesso web** (`stato.token`, generato con `secrets.token_urlsafe`) va confrontato con `secrets.compare_digest`, mai con `==`.
 * **L'eliminazione da iCloud è irreversibile.** Qualunque modifica al flusso di eliminazione deve preservare: (a) conferma esplicita dell'utente, (b) esclusione automatica dei file che non sono stati scaricati con successo, (c) messaggio chiaro prima dell'azione.
 
@@ -115,7 +118,11 @@ Gli errori del filesystem locale (`OSError`: disco pieno, permessi) vanno gestit
 
 ```bash
 # Verifica sintattica
-python3 -m py_compile photodeleter.py webui.py
+python3 -m py_compile src/icloud_photo_backup/*.py photodeleter.py
+
+# Installazione locale come pacchetto (equivalente Python di npx/npm)
+pip install -e .
+icloud-photo-backup --help
 
 # Help della CLI
 python3 photodeleter.py --help

@@ -172,6 +172,8 @@ pip install -r requirements.txt
 
 Attendi finché non compare `Successfully installed ...`.
 
+> 💡 **In alternativa**, se preferisci installare il progetto come un vero comando (senza clonare/attivare nulla ogni volta), salta ai passi 1–4 di questa guida solo per avere Python e Git, poi vai direttamente a **[Installazione con pip/pipx](#-installazione-con-pippipx-alternativa-a-git-clone)** nella sezione "Uso avanzato". Il resto della guida (login, filtri, download...) resta identico: cambia solo come lo avvii.
+
 **L'installazione è finita.** Ora scegli come proseguire:
 
 * 👉 **[PARTE 2 — Interfaccia grafica](#-parte-2--interfaccia-grafica-consigliata)** (consigliata)
@@ -417,6 +419,45 @@ Email e cartella di destinazione te le ricorderà lui: basta premere Invio.
 ---
 
 # ⚙️ Uso avanzato
+
+## 📦 Installazione con pip/pipx (alternativa a `git clone`)
+
+Il progetto è anche un vero pacchetto Python, installabile senza clonare il repository manualmente né attivare un ambiente virtuale a ogni avvio. È l'equivalente Python di `npx`/`npm` per chi viene da Node.js: la libreria standard di Python per questo è [`pip`](https://pip.pypa.io) (installazione permanente) o [`pipx`](https://pypa.github.io/pipx/) (installazione isolata automaticamente in un proprio ambiente, consigliata per gli eseguibili).
+
+**Con `pipx` (consigliato):**
+
+```bash
+# Installa pipx una tantum, se non lo hai gia'
+python3 -m pip install --user pipx
+python3 -m pipx ensurepath   # poi riapri il terminale
+
+# Installa il progetto direttamente dal repository GitHub
+pipx install "git+https://github.com/emanuelediluzio/downloadanddeleteallphotosicloud.git"
+```
+
+**Con `pip`, dentro un ambiente virtuale:**
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate   # .venv\Scripts\Activate.ps1 su Windows
+pip install "git+https://github.com/emanuelediluzio/downloadanddeleteallphotosicloud.git"
+```
+
+**Da una copia locale già clonata** (utile se stai modificando il codice):
+
+```bash
+cd downloadanddeleteallphotosicloud
+pipx install .          # oppure: pip install -e .   (modalità "editable", per sviluppo)
+```
+
+Una volta installato, in tutti i casi è disponibile un nuovo comando **`icloud-photo-backup`**, equivalente a `python3 photodeleter.py`:
+
+```bash
+icloud-photo-backup            # solo terminale
+icloud-photo-backup --web      # interfaccia grafica
+icloud-photo-backup --help     # elenco opzioni
+```
+
+> ⚠️ Il pacchetto **non è ancora pubblicato su PyPI** (il registro pubblico da cui si installa con solo `pip install icloud-photo-backup-cleaner`, senza indicare un repository). Per ora va installato da GitHub o da una copia locale come mostrato sopra. Pubblicarlo su PyPI richiede un account personale su pypi.org: è un passo che riguarda la distribuzione pubblica del progetto, da fare quando (e se) lo si decide esplicitamente.
 
 ## Selezione da riga di comando
 

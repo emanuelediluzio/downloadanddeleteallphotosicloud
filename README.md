@@ -20,7 +20,7 @@ Si può usare in **due modi**: con un'**interfaccia grafica** nel browser (vedi 
 | 📅 **Organizzazione automatica** | I file vengono ordinati in `Anno / Mese / Foto o Video` |
 | ⏸️ **Riprendibile** | I file già scaricati vengono saltati: se si interrompe, basta rilanciarlo |
 | 📊 **Barre di progresso** | Contatore, tempo trascorso e **tempo rimanente stimato** |
-| ⬆️ **Caricamento su iCloud** | Puoi anche caricare foto e video dal computer verso iCloud |
+| ⬆️ **Caricamento su iCloud** | Carica foto e video verso iCloud: selezione file o trascinamento (drag & drop) nella web UI, oppure `--carica` da terminale |
 | 💾 **Ricorda le impostazioni** | Email e cartella di destinazione riproposte al prossimo avvio |
 | 🔐 **Password mai salvata** | Input nascosto, nessuna credenziale scritta nel codice o su disco |
 | 🔁 **Retry intelligente** | Ritenta sugli errori di rete, si ferma su quelli irrecuperabili |
@@ -269,7 +269,14 @@ Premi **`🗑️ Elimina da iCloud`**. Per sicurezza il pulsante di conferma res
 
 ## Passo 14 — Caricare foto su iCloud (opzionale)
 
-Premi **`⬆️ Carica su iCloud`**, scegli i file dal computer e verranno caricati nella tua libreria iCloud.
+Due modi, a scelta:
+
+* Premi **`⬆️ Carica su iCloud`** e scegli i file dal computer nella finestra che si apre.
+* Oppure **trascina i file col mouse** da una cartella del computer e rilasciali in un punto qualsiasi della pagina: compare un riquadro tratteggiato che conferma dove rilasciarli.
+
+![Trascina i file per caricarli](docs/web-6-trascina-carica.png)
+
+In entrambi i casi i file selezionati vengono caricati nella tua libreria iCloud, con una barra di avanzamento e un riepilogo finale.
 
 ## Passo 15 — Quando hai finito
 
@@ -475,6 +482,12 @@ python3 photodeleter.py --tipo foto
 
 # Interfaccia grafica su una porta diversa
 python3 photodeleter.py --web --porta 9000
+
+# Carica un singolo file su iCloud
+python3 photodeleter.py --carica ./vacanze/foto_spiaggia.jpg
+
+# Carica tutte le foto/video di una cartella (ricorsivo) su iCloud
+python3 photodeleter.py --carica ./vacanze
 ```
 
 | Argomento | Descrizione |
@@ -484,8 +497,11 @@ python3 photodeleter.py --web --porta 9000
 | `--da GG/MM/AAAA` | Elabora solo da questa data in poi |
 | `--a GG/MM/AAAA` | Elabora solo fino a questa data |
 | `--tipo {tutti,foto,video}` | Limita a sole foto o soli video |
+| `--carica PERCORSO` | Carica su iCloud un file, o una cartella intera, invece di scaricare/eliminare |
 
 Accettati anche i formati `AAAA-MM-GG` e `GG-MM-AAAA`. Le date sono **inclusive**.
+
+Con `--carica` su una cartella, vengono presi solo i file con estensione foto/video riconosciuta (jpg, png, heic, mov, mp4, ecc. — [elenco completo nel codice](src/icloud_photo_backup/cli.py)); un singolo file indicato esplicitamente viene invece sempre caricato. `--carica` non si può combinare con `--web`.
 
 Elenco completo delle opzioni: `python3 photodeleter.py --help`
 

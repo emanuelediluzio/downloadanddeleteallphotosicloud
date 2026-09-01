@@ -180,6 +180,30 @@ input[type=date], select {
   z-index: 15;
 }
 
+/* ---------- Trascina file per caricarli su iCloud ---------- */
+.zona-trascinamento {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 22, 26, .88);
+  border: 3px dashed var(--ciano);
+  margin: 14px;
+  border-radius: 16px;
+  pointer-events: none; /* lascia passare dragover/drop agli elementi sotto */
+}
+.zona-trascinamento[hidden] { display: none; }
+.zona-trascinamento-contenuto { text-align: center; }
+.zona-trascinamento-icona { font-size: 48px; }
+.zona-trascinamento p {
+  margin: 10px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ciano);
+}
+
 /* ---------- Finestre modali ---------- */
 .modale {
   position: fixed;

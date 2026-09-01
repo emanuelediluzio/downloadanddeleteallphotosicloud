@@ -19,7 +19,7 @@
   </div>
 
   <div class="azioni">
-    <button id="btn-carica" class="bottone secondario">⬆️ Carica su iCloud</button>
+    <button id="btn-carica" class="bottone secondario" title="Oppure trascina i file ovunque nella pagina">⬆️ Carica su iCloud</button>
     <button id="btn-scarica" class="bottone primario" disabled>⬇️ Scarica selezionati</button>
     <button id="btn-elimina" class="bottone pericolo" disabled>🗑️ Elimina da iCloud</button>
   </div>
@@ -57,6 +57,13 @@
 </main>
 
 <div id="banda" class="banda-selezione" hidden></div>
+
+<div id="zona-trascinamento" class="zona-trascinamento" hidden>
+  <div class="zona-trascinamento-contenuto">
+    <span class="zona-trascinamento-icona">⬆️</span>
+    <p>Rilascia qui per caricare su iCloud</p>
+  </div>
+</div>
 
 <!-- Finestra di conferma eliminazione -->
 <div id="modale-elimina" class="modale" hidden>

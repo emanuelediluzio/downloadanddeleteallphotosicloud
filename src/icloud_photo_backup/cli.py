@@ -47,6 +47,13 @@ MAX_RETRIES_ON_FATAL_LIKE = 3
 # Estensioni considerate video (tutto il resto e' trattato come foto)
 VIDEO_EXTENSIONS = (".mp4", ".mov", ".avi", ".m4v")
 
+# Estensioni riconosciute quando si carica una CARTELLA su iCloud: evita di
+# provare a caricare per sbaglio file non multimediali che si trovano li'
+# dentro. Se invece l'utente indica un singolo file, viene sempre caricato
+# a prescindere dall'estensione: e' una scelta esplicita.
+IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".heic", ".heif", ".gif", ".bmp", ".tiff", ".webp")
+UPLOAD_EXTENSIONS = IMAGE_EXTENSIONS + VIDEO_EXTENSIONS
+
 # Formati di data accettati nei prompt e negli argomenti da riga di comando
 DATE_FORMATS = ("%d/%m/%Y", "%Y-%m-%d", "%d-%m-%Y")
 
@@ -75,7 +82,7 @@ def save_config(email: str, destination: str) -> None:
         pass  # non bloccante: se non riesce a salvare, pazienza
 
 
-def get_credentials():
+def get_credentials(chiedi_destinazione: bool = True):
     console.print(Rule("[bold cyan]Accesso[/bold cyan]", style="cyan"))
     saved = load_saved_config()
 
@@ -86,6 +93,12 @@ def get_credentials():
     password = os.environ.get("ICLOUD_PASSWORD") or Prompt.ask(
         "🔑 [bold]Password[/bold]", password=True
     )
+
+    if not chiedi_destinazione:
+        # Es. il solo caricamento su iCloud non ha bisogno di una cartella
+        # locale: non ha senso chiederla.
+        save_config(email, saved.get("destination", "./Backup_iCloud"))
+        return email, password, None
 
     destination = os.environ.get("ICLOUD_BACKUP_PATH")
     if not destination:
@@ -500,6 +513,95 @@ def backup_and_clean_icloud(email, password, base_path, data_da=None, data_a=Non
     delete_photos(selezionati, failed_files, descrizione if filtro_attivo else None)
 
 
+def trova_file_da_caricare(percorso: str) -> list:
+    """Se e' un file lo restituisce cosi' com'e' (scelta esplicita
+    dell'utente). Se e' una cartella, cerca ricorsivamente foto/video."""
+    if os.path.isfile(percorso):
+        return [percorso]
+
+    trovati = []
+    for radice, _, nomi in os.walk(percorso):
+        for nome in nomi:
+            if nome.lower().endswith(UPLOAD_EXTENSIONS):
+                trovati.append(os.path.join(radice, nome))
+    return sorted(trovati)
+
+
+def carica_su_icloud(email, password, percorso):
+    """Carica un file, o tutte le foto/video di una cartella, sulla
+    libreria iCloud Photos."""
+    if not os.path.exists(percorso):
+        console.print(f"[bold red]✗ Percorso non trovato: {percorso}[/bold red]")
+        sys.exit(1)
+
+    file_da_caricare = trova_file_da_caricare(percorso)
+    if not file_da_caricare:
+        console.print(f"[yellow]Nessun file foto/video trovato in {percorso}.[/yellow]")
+        return
+
+    api = authenticate(email, password)
+
+    console.print(Rule("[bold cyan]Caricamento su iCloud[/bold cyan]", style="cyan"))
+    console.print(f"[dim]{len(file_da_caricare)} file da caricare da {percorso}[/dim]\n")
+
+    caricati = 0
+    falliti = []
+
+    progress = Progress(
+        SpinnerColumn(),
+        TextColumn("[bold cyan]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TimeElapsedColumn(),
+        TimeRemainingColumn(),
+        console=console,
+    )
+
+    with progress:
+        task = progress.add_task("Caricamento", total=len(file_da_caricare))
+
+        for file_path in file_da_caricare:
+            nome = os.path.basename(file_path)
+            fatal_retries = 0
+
+            while True:
+                try:
+                    api.photos.upload(file_path)
+                    caricati += 1
+                    break
+                except Exception as e:
+                    error_msg = str(e)
+
+                    if is_fatal_error(error_msg):
+                        fatal_retries += 1
+                        if fatal_retries >= MAX_RETRIES_ON_FATAL_LIKE:
+                            progress.console.print(
+                                f"[bold red]✗ {nome}: errore non recuperabile "
+                                f"({error_msg}). Salto il file.[/bold red]"
+                            )
+                            falliti.append(nome)
+                            break
+                        time.sleep(5)
+                        continue
+
+                    wait_time = wait_after_error(error_msg)
+                    progress.console.print(
+                        f"[yellow]⚠ Errore per {nome}: {error_msg}. "
+                        f"Riprovo tra {wait_time}s...[/yellow]"
+                    )
+                    time.sleep(wait_time)
+
+            progress.advance(task)
+
+    table = Table(title="Riepilogo Caricamento", box=None, show_header=False, min_width=34)
+    table.add_row("✅ Caricati", str(caricati))
+    table.add_row("❌ Falliti", str(len(falliti)))
+    table.add_row("📦 Totale", str(len(file_da_caricare)))
+    console.print()
+    console.print(table)
+    console.print("\n[bold green]Caricamento completato.[/bold green]\n")
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Scarica la libreria iCloud Photos in locale e, su conferma, la elimina dal cloud.",
@@ -524,7 +626,16 @@ def parse_args():
         metavar="N",
         help="Porta dell'interfaccia web (predefinita: 8765)",
     )
+    parser.add_argument(
+        "--carica",
+        metavar="PERCORSO",
+        help="Carica su iCloud un file, o una cartella (ricorsiva) di foto/video, "
+        "invece di scaricare/eliminare",
+    )
     args = parser.parse_args()
+
+    if args.carica and args.web:
+        parser.error("--carica e --web non si possono usare insieme")
 
     data_da = data_a = None
     if args.da:
@@ -570,11 +681,15 @@ def main():
     try:
         ARGS, DATA_DA, DATA_A, TIPO = parse_args()
         print_banner()
-        EMAIL, PASSWORD, DESTINAZIONE = get_credentials()
-        if ARGS.web:
-            avvia_interfaccia_web(EMAIL, PASSWORD, DESTINAZIONE, ARGS.porta)
+        if ARGS.carica:
+            EMAIL, PASSWORD, _ = get_credentials(chiedi_destinazione=False)
+            carica_su_icloud(EMAIL, PASSWORD, ARGS.carica)
         else:
-            backup_and_clean_icloud(EMAIL, PASSWORD, DESTINAZIONE, DATA_DA, DATA_A, TIPO)
+            EMAIL, PASSWORD, DESTINAZIONE = get_credentials()
+            if ARGS.web:
+                avvia_interfaccia_web(EMAIL, PASSWORD, DESTINAZIONE, ARGS.porta)
+            else:
+                backup_and_clean_icloud(EMAIL, PASSWORD, DESTINAZIONE, DATA_DA, DATA_A, TIPO)
     except KeyboardInterrupt:
         console.print("\n[bold yellow]Interrotto dall'utente.[/bold yellow]")
         sys.exit(130)

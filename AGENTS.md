@@ -101,6 +101,15 @@ Tutti questi script di test sono **usa e getta**: vivono nella scratchpad direct
 * **Il token di accesso web** (`stato.token`, generato con `secrets.token_urlsafe`) va confrontato con `secrets.compare_digest`, mai con `==`.
 * **L'eliminazione da iCloud è irreversibile.** Qualunque modifica al flusso di eliminazione deve preservare: (a) conferma esplicita dell'utente, (b) esclusione automatica dei file che non sono stati scaricati con successo, (c) messaggio chiaro prima dell'azione.
 
+## Upload e drag & drop
+
+Esistono due percorsi di caricamento verso iCloud, entrambi passano da `PhotosService.upload(path)` (pyicloud):
+
+* **Web** (`webui.py::api_carica`): riceve i file via `multipart/form-data`, li salva in una cartella temporanea (`.upload_tmp` dentro la cartella di destinazione), chiama `upload()`, poi cancella sempre il file temporaneo (`finally`). Il drag & drop (`web/app.js`) è un ulteriore modo per attivare la stessa funzione `caricaFile()` usata dal click sul pulsante — non introdurre un percorso separato se aggiungi altri modi di innescare l'upload (es. incolla da appunti): riusa `caricaFile()`.
+* **CLI** (`cli.py::carica_su_icloud`, opzione `--carica PERCORSO`): se il percorso è un file, lo carica sempre, a prescindere dall'estensione (scelta esplicita dell'utente); se è una cartella, cammina ricorsivamente e carica solo le estensioni in `UPLOAD_EXTENSIONS`, per non tentare di caricare file non multimediali trovati per caso nella cartella. Usa lo stesso schema di retry di `download_photos()` (`is_fatal_error`/`wait_after_error`/`MAX_RETRIES_ON_FATAL_LIKE`) — se lo modifichi in un punto, valuta se l'altro va allineato.
+
+`--carica` è mutuamente esclusivo con `--web` (validato in `parse_args()`); con `--carica` non viene chiesta la cartella di destinazione locale (`get_credentials(chiedi_destinazione=False)`), perché l'upload non ne ha bisogno — se aggiungi altri flag "azione singola" che non scaricano nulla in locale, segui lo stesso pattern invece di far apparire un prompt fuori contesto.
+
 ## Convenzioni di errore
 
 `is_fatal_error()` distingue errori permanenti (401/403/auth) — ritentati poche volte poi il file viene saltato — da errori transitori (503/connessione) — ritentati a oltranza con attesa crescente (`wait_after_error()`). Se aggiungi nuovi tipi di errore da gestire, decidi esplicitamente in quale categoria cadono: un errore permanente trattato come transitorio blocca lo script all'infinito (bug già corretto una volta, vedi storia commit); un errore transitorio trattato come permanente fa perdere file scaricabili.

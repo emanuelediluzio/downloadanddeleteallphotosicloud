@@ -272,18 +272,22 @@ document.getElementById("btn-carica").addEventListener("click", () => {
 });
 
 document.getElementById("input-file").addEventListener("change", async (evento) => {
-  const file = [...evento.target.files];
-  if (!file.length) return;
+  await caricaFile([...evento.target.files]);
+  evento.target.value = "";
+});
+
+async function caricaFile(listaFile) {
+  if (!listaFile.length) return;
 
   const modulo = new FormData();
-  file.forEach((f) => modulo.append("file", f));
+  listaFile.forEach((f) => modulo.append("file", f));
 
-  mostraAvanzamento("Caricamento su iCloud", file.length);
-  aggiornaAvanzamento(0, file.length, "Invio in corso…");
+  mostraAvanzamento("Caricamento su iCloud", listaFile.length);
+  aggiornaAvanzamento(0, listaFile.length, "Invio in corso…");
 
   try {
     const esito = await chiamaApi("/api/carica", { method: "POST", body: modulo });
-    aggiornaAvanzamento(file.length, file.length, "");
+    aggiornaAvanzamento(listaFile.length, listaFile.length, "");
     const messaggi = [
       `Caricati: ${esito.caricati.length}`,
       ...esito.falliti.map((f) => `Fallito ${f.nome}: ${f.errore}`),
@@ -294,7 +298,40 @@ document.getElementById("input-file").addEventListener("change", async (evento) 
   }
 
   document.getElementById("avanzamento-chiudi").hidden = false;
-  evento.target.value = "";
+}
+
+// --- trascina-e-rilascia: trascina i file ovunque nella pagina per caricarli ---
+const zonaTrascinamento = document.getElementById("zona-trascinamento");
+let contatoreTrascinamento = 0; // dragenter/dragleave si accavallano sui figli, serve un contatore
+
+function eventoContieneFile(evento) {
+  return evento.dataTransfer && [...evento.dataTransfer.types].includes("Files");
+}
+
+window.addEventListener("dragenter", (evento) => {
+  if (!eventoContieneFile(evento)) return;
+  evento.preventDefault();
+  contatoreTrascinamento++;
+  zonaTrascinamento.hidden = false;
+});
+
+window.addEventListener("dragover", (evento) => {
+  if (!eventoContieneFile(evento)) return;
+  evento.preventDefault(); // necessario per permettere il drop
+});
+
+window.addEventListener("dragleave", (evento) => {
+  if (!eventoContieneFile(evento)) return;
+  contatoreTrascinamento = Math.max(0, contatoreTrascinamento - 1);
+  if (contatoreTrascinamento === 0) zonaTrascinamento.hidden = true;
+});
+
+window.addEventListener("drop", async (evento) => {
+  if (!eventoContieneFile(evento)) return;
+  evento.preventDefault();
+  contatoreTrascinamento = 0;
+  zonaTrascinamento.hidden = true;
+  await caricaFile([...evento.dataTransfer.files]);
 });
 
 // -------------------------------------------------- operazioni lunghe

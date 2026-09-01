@@ -239,7 +239,7 @@ def download_photos(all_photos, base_path):
             progress.advance(task)
 
     total_count = len(all_photos)
-    table = Table(title="Riepilogo Download", box=None, show_header=False)
+    table = Table(title="Riepilogo Download", box=None, show_header=False, min_width=34)
     table.add_row("✅ Scaricati", str(downloaded_count))
     table.add_row("⏭️  Già presenti (saltati)", str(skipped_count))
     table.add_row("❌ Falliti", str(len(failed_files)))
@@ -321,7 +321,7 @@ def delete_photos(all_photos, failed_files):
                         break
             progress.advance(task)
 
-    table = Table(title="Riepilogo Eliminazione", box=None, show_header=False)
+    table = Table(title="Riepilogo Eliminazione", box=None, show_header=False, min_width=34)
     table.add_row("🗑️  Eliminati", str(deleted_count))
     table.add_row("❌ Falliti", str(len(delete_failed)))
     console.print()

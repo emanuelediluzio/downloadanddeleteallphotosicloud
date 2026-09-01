@@ -11,11 +11,12 @@ Questo script Python permette di automatizzare il backup completo della libreria
 
 
 * **Download Multi-chunk**: Gestisce file pesanti (video 4K) scaricandoli a pezzi per evitare crash della memoria.
-* **Barre di Progresso (Progress Bars)**: Monitoraggio in tempo reale sia della fase di scaricamento che di quella di eliminazione tramite `tqdm`.
+* **Interfaccia da terminale curata**: barre di progresso, pannelli e tabelle di riepilogo tramite [`rich`](https://github.com/Textualize/rich).
 * **Sicurezza Integrata**:
-* Supporta l'autenticazione a due fattori (2FA).
-* L'eliminazione avviene **solo** dopo che tutti i download sono stati completati.
-* Richiede una conferma testuale esplicita (`SI`) prima di rimuovere qualsiasi cosa dal cloud.
+* Nessuna credenziale hardcoded: email e password vengono richieste a runtime (con input nascosto) oppure lette da variabili d'ambiente.
+* Supporta l'autenticazione a due fattori (2FA), incluso il "trust" della sessione.
+* L'eliminazione avviene **solo** dopo che tutti i download sono stati completati, e richiede conferma esplicita.
+* Gli errori di rete/server vengono ritentati automaticamente; gli errori di autenticazione/permessi vengono invece rilevati e il file viene saltato (ed **escluso** dall'eliminazione su iCloud) dopo pochi tentativi, per evitare che lo script resti bloccato all'infinito.
 
 
 
@@ -43,29 +44,35 @@ Destinazione/
 Assicurati di avere installato le librerie necessarie:
 
 ```bash
-pip install pyicloud tqdm
+pip install -r requirements.txt
 
 ```
 
 ## 🛠️ Configurazione e Utilizzo
 
-1. Apri lo script e modifica le variabili di accesso:
-* `EMAIL`: Il tuo Apple ID.
-* `PASSWORD`: La tua password (o la password specifica per l'app se richiesta).
-* `DESTINAZIONE`: Il percorso locale dove vuoi salvare i file (es. `'D:/Backup_Foto'`).
+Le credenziali **non** sono più scritte nel codice. Puoi fornirle in due modi:
 
+**A) Interattivo (consigliato)**: esegui lo script e inserisci email, password (nascosta) e cartella di destinazione quando richiesto.
 
-2. Esegui lo script:
 ```bash
-python nome_dello_script.py
+python photodeleter.py
 
 ```
 
+**B) Variabili d'ambiente** (utile per automazioni):
 
-3. Segui le istruzioni a schermo:
+```bash
+export ICLOUD_EMAIL="tuo_id@icloud.com"
+export ICLOUD_PASSWORD="tua_password"
+export ICLOUD_BACKUP_PATH="./Backup_iCloud"
+python photodeleter.py
+
+```
+
+Segui poi le istruzioni a schermo:
 * Inserisci il codice **2FA** se richiesto.
 * Attendi il completamento della **Fase 1 (Download)**.
-* Digita `SI` per avviare la **Fase 2 (Eliminazione)** se vuoi liberare spazio su iCloud.
+* Conferma quando richiesto per avviare la **Fase 2 (Eliminazione)** se vuoi liberare spazio su iCloud (i file non scaricati correttamente vengono automaticamente esclusi dall'eliminazione).
 
 
 

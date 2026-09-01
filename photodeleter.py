@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import os
 import sys
 import time
@@ -23,6 +24,10 @@ from rich.rule import Rule
 
 console = Console()
 
+# File dove vengono ricordati email e cartella di destinazione tra un
+# avvio e l'altro (la password NON viene mai salvata su disco).
+CONFIG_PATH = os.path.expanduser("~/.icloud_photodeleter_config.json")
+
 # Parole chiave che indicano un errore NON recuperabile con un retry
 # (credenziali/permessi): riprovare all'infinito non serve a nulla e
 # bloccherebbe lo script per sempre.
@@ -46,15 +51,42 @@ def print_banner():
     console.print(Panel.fit(banner, border_style="cyan", padding=(1, 4)))
 
 
+def load_saved_config() -> dict:
+    try:
+        with open(CONFIG_PATH, "r") as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return {}
+
+
+def save_config(email: str, destination: str) -> None:
+    try:
+        with open(CONFIG_PATH, "w") as f:
+            json.dump({"email": email, "destination": destination}, f)
+    except OSError:
+        pass  # non bloccante: se non riesce a salvare, pazienza
+
+
 def get_credentials():
     console.print(Rule("[bold cyan]Accesso[/bold cyan]", style="cyan"))
-    email = os.environ.get("ICLOUD_EMAIL") or Prompt.ask("📧 [bold]Apple ID[/bold]")
+    saved = load_saved_config()
+
+    email = os.environ.get("ICLOUD_EMAIL")
+    if not email:
+        email = Prompt.ask("📧 [bold]Apple ID[/bold]", default=saved.get("email"))
+
     password = os.environ.get("ICLOUD_PASSWORD") or Prompt.ask(
         "🔑 [bold]Password[/bold]", password=True
     )
-    destination = os.environ.get("ICLOUD_BACKUP_PATH") or Prompt.ask(
-        "📁 [bold]Cartella di destinazione[/bold]", default="./Backup_iCloud"
-    )
+
+    destination = os.environ.get("ICLOUD_BACKUP_PATH")
+    if not destination:
+        destination = Prompt.ask(
+            "📁 [bold]Cartella di destinazione[/bold]",
+            default=saved.get("destination", "./Backup_iCloud"),
+        )
+
+    save_config(email, destination)
     return email, password, destination
 
 
@@ -262,6 +294,7 @@ def delete_photos(all_photos, failed_files):
         BarColumn(),
         MofNCompleteColumn(),
         TimeElapsedColumn(),
+        TimeRemainingColumn(),
         console=console,
     )
 

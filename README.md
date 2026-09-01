@@ -14,6 +14,7 @@ Questo script Python permette di automatizzare il backup completo della libreria
 * **Interfaccia da terminale curata**: barre di progresso, pannelli e tabelle di riepilogo tramite [`rich`](https://github.com/Textualize/rich).
 * **Sicurezza Integrata**:
 * Nessuna credenziale hardcoded: email e password vengono richieste a runtime (con input nascosto) oppure lette da variabili d'ambiente.
+* Email e cartella di destinazione vengono ricordate tra un avvio e l'altro (salvate in `~/.icloud_photodeleter_config.json`); la **password non viene mai salvata su disco**.
 * Supporta l'autenticazione a due fattori (2FA), incluso il "trust" della sessione.
 * L'eliminazione avviene **solo** dopo che tutti i download sono stati completati, e richiede conferma esplicita.
 * Gli errori di rete/server vengono ritentati automaticamente; gli errori di autenticazione/permessi vengono invece rilevati e il file viene saltato (ed **escluso** dall'eliminazione su iCloud) dopo pochi tentativi, per evitare che lo script resti bloccato all'infinito.

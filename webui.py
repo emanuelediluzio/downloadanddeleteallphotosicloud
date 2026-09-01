@@ -162,6 +162,32 @@ def api_elementi():
     return jsonify({"elementi": risultato, "totale": len(risultato)})
 
 
+def _segnaposto(tipo: str):
+    """Immagine di ripiego quando iCloud non fornisce una miniatura valida."""
+    icona = "▶" if tipo == "video" else "🖼"
+    svg = (
+        "<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'>"
+        "<rect width='300' height='300' fill='#222630'/>"
+        f"<text x='150' y='150' font-size='64' fill='#5b6474' text-anchor='middle'"
+        f" dominant-baseline='central'>{icona}</text>"
+        "<text x='150' y='215' font-size='16' fill='#5b6474' text-anchor='middle'>"
+        "anteprima non disponibile</text>"
+        "</svg>"
+    )
+    return app.response_class(svg, mimetype="image/svg+xml")
+
+
+def _sembra_immagine(dati) -> bool:
+    """Controlla i primi byte: evita di spacciare per miniatura un file video."""
+    if not isinstance(dati, (bytes, bytearray)) or len(dati) < 4:
+        return False
+    return (
+        dati[:3] == b"\xff\xd8\xff"          # JPEG
+        or dati[:8] == b"\x89PNG\r\n\x1a\n"  # PNG
+        or dati[:4] == b"RIFF"               # WEBP
+    )
+
+
 @app.route("/api/miniatura/<int:id_foto>")
 def api_miniatura(id_foto):
     """Miniatura di un elemento, con cache su disco."""
@@ -173,20 +199,31 @@ def api_miniatura(id_foto):
         return send_file(percorso_cache, mimetype="image/jpeg")
 
     foto = stato.foto[id_foto]
+
+    # Per i video "thumb" e' un piccolo VIDEO (resVidSmall), non un'immagine:
+    # serve "thumb_image" (resJPEGThumb), altrimenti il tag <img> non mostra nulla.
+    if stato.meta[id_foto]["tipo"] == "video":
+        versioni = ("thumb_image", "medium_image", "thumb", "medium")
+    else:
+        versioni = ("thumb", "medium")
+
     dati = None
-    for versione in ("thumb", "medium"):
+    for versione in versioni:
         try:
-            dati = foto.download(versione)
-            if dati:
-                break
+            candidato = foto.download(versione)
         except Exception:
             continue
+        if not candidato:
+            continue
+        if hasattr(candidato, "read"):
+            candidato = candidato.read()
+        if _sembra_immagine(candidato):
+            dati = candidato
+            break
 
     if not dati:
-        abort(404)
-
-    if hasattr(dati, "read"):
-        dati = dati.read()
+        # Nessuna versione utilizzabile: meglio un segnaposto di un riquadro rotto
+        return _segnaposto(stato.meta[id_foto]["tipo"])
 
     try:
         with open(percorso_cache, "wb") as f:

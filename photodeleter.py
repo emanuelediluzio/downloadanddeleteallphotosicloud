@@ -512,6 +512,18 @@ def parse_args():
         choices=["tutti", "foto", "video"],
         help="Limita a sole foto o soli video (predefinito: tutti)",
     )
+    parser.add_argument(
+        "--web",
+        action="store_true",
+        help="Avvia l'interfaccia grafica nel browser invece di usare il terminale",
+    )
+    parser.add_argument(
+        "--porta",
+        type=int,
+        default=8765,
+        metavar="N",
+        help="Porta dell'interfaccia web (predefinita: 8765)",
+    )
     args = parser.parse_args()
 
     data_da = data_a = None
@@ -526,15 +538,43 @@ def parse_args():
     if data_da and data_a and data_da > data_a:
         parser.error("la data di --da è successiva a quella di --a")
 
-    return data_da, data_a, args.tipo
+    return args, data_da, data_a, args.tipo
+
+
+def avvia_interfaccia_web(email, password, base_path, porta):
+    """Autentica nel terminale e poi apre l'interfaccia grafica nel browser."""
+    try:
+        from webui import avvia_webui
+    except ImportError:
+        console.print(
+            "\n[bold red]✗ Manca la libreria Flask, necessaria per l'interfaccia web.[/bold red]\n"
+            "Installala con: [cyan]pip install -r requirements.txt[/cyan]"
+        )
+        sys.exit(1)
+
+    api = authenticate(email, password)
+
+    with console.status("[bold green]Accesso alla libreria foto in corso...", spinner="dots"):
+        all_photos = list(api.photos.all)
+    console.print(f"[bold]Trovati {len(all_photos)} elementi su iCloud.[/bold]")
+
+    if not all_photos:
+        console.print("[yellow]Nessun file trovato. Fine.[/yellow]")
+        return
+
+    os.makedirs(base_path, exist_ok=True)
+    avvia_webui(api, all_photos, base_path, porta=porta)
 
 
 if __name__ == "__main__":
     try:
-        DATA_DA, DATA_A, TIPO = parse_args()
+        ARGS, DATA_DA, DATA_A, TIPO = parse_args()
         print_banner()
         EMAIL, PASSWORD, DESTINAZIONE = get_credentials()
-        backup_and_clean_icloud(EMAIL, PASSWORD, DESTINAZIONE, DATA_DA, DATA_A, TIPO)
+        if ARGS.web:
+            avvia_interfaccia_web(EMAIL, PASSWORD, DESTINAZIONE, ARGS.porta)
+        else:
+            backup_and_clean_icloud(EMAIL, PASSWORD, DESTINAZIONE, DATA_DA, DATA_A, TIPO)
     except KeyboardInterrupt:
         console.print("\n[bold yellow]Interrotto dall'utente.[/bold yellow]")
         sys.exit(130)

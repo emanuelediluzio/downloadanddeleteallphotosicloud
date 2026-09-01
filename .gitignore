@@ -8,6 +8,10 @@ venv/
 # Backup foto scaricate (non deve finire nel repo)
 Backup_iCloud/
 
+# Cache miniature e file temporanei dell'interfaccia web
+.miniature/
+.upload_tmp/
+
 # Ambiente / segreti
 .env
 

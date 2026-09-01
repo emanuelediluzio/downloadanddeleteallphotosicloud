@@ -1,0 +1,226 @@
+:root {
+  --sfondo: #14161a;
+  --pannello: #1c1f26;
+  --bordo: #2b303a;
+  --testo: #e6e9ef;
+  --testo-tenue: #98a2b3;
+  --ciano: #4fc3f7;
+  --rosso: #ef4d5a;
+  --verde: #57c98a;
+  --giallo: #e5b567;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--sfondo);
+  color: var(--testo);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  user-select: none;
+}
+
+/* ---------- Barra superiore ---------- */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  background: var(--pannello);
+  border-bottom: 1px solid var(--bordo);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  flex-wrap: wrap;
+}
+
+.titolo { display: flex; align-items: center; gap: 12px; }
+.logo { font-size: 26px; }
+.barra h1 { margin: 0; font-size: 16px; font-weight: 600; }
+.barra p { margin: 2px 0 0; font-size: 12px; color: var(--testo-tenue); }
+.azioni { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---------- Bottoni ---------- */
+.bottone {
+  border: 1px solid var(--bordo);
+  background: #232830;
+  color: var(--testo);
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: filter .15s, opacity .15s;
+}
+.bottone:hover:not(:disabled) { filter: brightness(1.25); }
+.bottone:disabled { opacity: .4; cursor: not-allowed; }
+.primario { background: #14506e; border-color: #1c6d95; }
+.pericolo { background: #6e1f26; border-color: #8f2b34; }
+.secondario { background: #2a303a; }
+.piatto { background: transparent; }
+
+/* ---------- Filtri ---------- */
+.filtri {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #191c22;
+  border-bottom: 1px solid var(--bordo);
+  flex-wrap: wrap;
+  position: sticky;
+  top: 66px;
+  z-index: 19;
+}
+.gruppo { display: flex; align-items: center; gap: 6px; }
+.gruppo label { font-size: 12px; color: var(--testo-tenue); }
+input[type=date], select {
+  background: #232830;
+  border: 1px solid var(--bordo);
+  color: var(--testo);
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+.separatore { width: 1px; height: 24px; background: var(--bordo); }
+.contatore { font-size: 13px; color: var(--ciano); font-weight: 600; }
+
+/* ---------- Griglia ---------- */
+.griglia {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 16px 20px 60px;
+  position: relative;
+}
+
+.cella {
+  position: relative;
+  aspect-ratio: 1;
+  background: #222630;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+.cella img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  opacity: 0;
+  transition: opacity .25s;
+  -webkit-user-drag: none;
+}
+.cella img.visibile { opacity: 1; }
+
+.cella.selezionata { border-color: var(--ciano); }
+.cella.selezionata::after {
+  content: "✓";
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 22px; height: 22px;
+  background: var(--ciano);
+  color: #0b1016;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.etichetta {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 14px 8px 6px;
+  background: linear-gradient(transparent, rgba(0,0,0,.85));
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+.etichetta .nome {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.etichetta .data { color: var(--testo-tenue); flex-shrink: 0; }
+
+.segno-video {
+  position: absolute;
+  top: 6px; left: 6px;
+  background: rgba(0,0,0,.65);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
+}
+
+.vuoto {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--testo-tenue);
+}
+
+/* ---------- Selezione a trascinamento ---------- */
+.banda-selezione {
+  position: absolute;
+  border: 1px solid var(--ciano);
+  background: rgba(79, 195, 247, .15);
+  pointer-events: none;
+  z-index: 15;
+}
+
+/* ---------- Finestre modali ---------- */
+.modale {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.7);
+  display: grid;
+  place-items: center;
+  z-index: 40;
+}
+/* Senza questa regola il "display: grid" qui sopra vincerebbe
+   sull'attributo hidden e la modale invisibile bloccherebbe i click. */
+.modale[hidden],
+.banda-selezione[hidden] { display: none; }
+.riquadro {
+  background: var(--pannello);
+  border: 1px solid var(--bordo);
+  border-radius: 14px;
+  padding: 24px;
+  width: min(520px, 92vw);
+}
+.riquadro h2 { margin: 0 0 12px; font-size: 17px; }
+.riquadro p { margin: 8px 0; }
+.nota { color: var(--testo-tenue); font-size: 13px; }
+.spunta { display: flex; align-items: center; gap: 8px; margin: 16px 0; font-size: 13px; }
+.pulsanti { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+.barra-progresso {
+  height: 10px;
+  background: #232830;
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 14px 0 8px;
+}
+.barra-progresso > div {
+  height: 100%;
+  width: 0%;
+  background: var(--ciano);
+  transition: width .2s;
+}
+
+.log {
+  max-height: 160px;
+  overflow-y: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--giallo);
+  background: #14171d;
+  border-radius: 8px;
+  padding: 8px;
+  margin-top: 10px;
+  user-select: text;
+}
+.log:empty { display: none; }

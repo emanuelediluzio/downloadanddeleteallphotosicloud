@@ -1,9 +1,11 @@
 # iCloud Photo Backup & Cleaner 📸 ☁️
 
-Script Python da terminale per **scaricare l'intera libreria iCloud Photos** sul proprio computer, organizzarla in cartelle ordinate e — solo dopo che il backup è riuscito — **liberare spazio su iCloud** eliminando le foto dal cloud.
+Scarica l'intera libreria **iCloud Photos** sul tuo computer, organizzala in cartelle ordinate e — solo dopo che il backup è riuscito — **libera spazio su iCloud** eliminando le foto dal cloud.
+
+Si può usare in **due modi**: con un'**interfaccia grafica** nel browser (vedi le foto e le selezioni col mouse) oppure **solo da terminale**.
 
 <p align="center">
-  <img src="docs/01-avvio.svg" alt="Schermata di avvio e accesso" width="100%">
+  <img src="docs/web-1-griglia.png" alt="Interfaccia grafica" width="100%">
 </p>
 
 ---
@@ -12,23 +14,38 @@ Script Python da terminale per **scaricare l'intera libreria iCloud Photos** sul
 
 | | |
 |---|---|
-| 🎯 **Selezione mirata** | Scegli **da che data a che data** e se prendere **solo foto o solo video**: puoi svuotare iCloud un periodo alla volta |
-| 📅 **Organizzazione automatica** | I file vengono ordinati in `Anno / Mese / Foto o Video`, non ammassati in un'unica cartella |
-| ⏸️ **Riprendibile** | I file già scaricati vengono saltati: se il backup si interrompe, basta rilanciarlo |
-| 📊 **Barre di progresso** | Contatore file, tempo trascorso e **tempo rimanente stimato**, sia in download che in eliminazione |
-| 💾 **Ricorda le impostazioni** | Email e cartella di destinazione vengono riproposte al prossimo avvio |
-| 🔐 **Password mai salvata** | Input nascosto a runtime, nessuna credenziale scritta nel codice o su disco |
-| 🔁 **Retry intelligente** | Ritenta automaticamente sugli errori di rete, si ferma su quelli irrecuperabili |
-| 🛡️ **Eliminazione sicura** | Avviene solo dopo il download completo, con conferma esplicita, e **salta i file non scaricati** |
-| 🎞️ **Video pesanti** | Download a blocchi (chunk) per non saturare la memoria con i 4K |
+| 🖼️ **Interfaccia grafica** | Vedi le miniature delle tue foto e scegli col mouse cosa scaricare o eliminare |
+| 🎯 **Selezione mirata** | Filtra **da che data a che data** e **solo foto / solo video** |
+| 📅 **Organizzazione automatica** | I file vengono ordinati in `Anno / Mese / Foto o Video` |
+| ⏸️ **Riprendibile** | I file già scaricati vengono saltati: se si interrompe, basta rilanciarlo |
+| 📊 **Barre di progresso** | Contatore, tempo trascorso e **tempo rimanente stimato** |
+| ⬆️ **Caricamento su iCloud** | Puoi anche caricare foto e video dal computer verso iCloud |
+| 💾 **Ricorda le impostazioni** | Email e cartella di destinazione riproposte al prossimo avvio |
+| 🔐 **Password mai salvata** | Input nascosto, nessuna credenziale scritta nel codice o su disco |
+| 🔁 **Retry intelligente** | Ritenta sugli errori di rete, si ferma su quelli irrecuperabili |
+| 🛡️ **Eliminazione sicura** | Solo dopo il download, con conferma esplicita, e **salta i file non scaricati** |
 
 ---
 
-# 📖 GUIDA COMPLETA (da zero)
+## 🤔 Quale dei due modi scegliere?
+
+| | 🖼️ Interfaccia grafica | ⌨️ Solo terminale |
+|---|---|---|
+| **Come si avvia** | `python3 photodeleter.py --web` | `python3 photodeleter.py` |
+| **Vedi le foto** | ✅ Sì, con le miniature | ❌ No, solo i nomi dei file |
+| **Selezione** | Col mouse, una per una o in blocco | Per intervallo di date e tipo |
+| **Caricare su iCloud** | ✅ Sì | ❌ No |
+| **Adatta a** | Chi vuole scegliere **quali** foto | Chi vuole scaricare/eliminare **tutto** o un intero periodo |
+
+> 💡 **Consiglio**: se è la prima volta, usa l'**interfaccia grafica**. È più semplice e vedi esattamente cosa stai per cancellare.
+
+---
+
+# 🔧 PARTE 1 — Installazione (uguale per entrambi i modi)
 
 > Questa guida presuppone che tu **non abbia mai usato il terminale**. Ogni comando va scritto e poi confermato premendo **Invio**.
 
-## Passo 0 — Apri il terminale
+## Passo 1 — Apri il terminale
 
 Il "terminale" è la finestra in cui si scrivono comandi testuali.
 
@@ -38,58 +55,50 @@ Il "terminale" è la finestra in cui si scrivono comandi testuali.
 | 🪟 **Windows** | Premi il tasto `Windows`, scrivi `PowerShell`, premi Invio |
 | 🐧 **Linux** | Premi `Ctrl` + `Alt` + `T` |
 
-Si apre una finestra con una riga di testo e un cursore che lampeggia. È lì che scriverai.
+Si apre una finestra con un cursore che lampeggia. È lì che scriverai.
 
 ---
 
-## Passo 1 — Controlla di avere Python
-
-Scrivi questo comando e premi Invio:
+## Passo 2 — Controlla di avere Python
 
 **macOS / Linux:**
 ```bash
 python3 --version
 ```
-
 **Windows:**
 ```powershell
 python --version
 ```
 
-✅ **Se risponde** qualcosa come `Python 3.11.15` → sei a posto, vai al Passo 2.
+✅ **Se risponde** `Python 3.11.15` (o simile) → vai al Passo 3.
 
-❌ **Se risponde** `command not found` o `non riconosciuto` → Python non è installato:
+❌ **Se risponde** `command not found` o `non riconosciuto`:
 1. Vai su [python.org/downloads](https://www.python.org/downloads/)
 2. Scarica l'ultima versione e installala
-3. ⚠️ **Su Windows**, durante l'installazione spunta la casella **"Add Python to PATH"** in fondo alla prima schermata, altrimenti il terminale non lo troverà
-4. **Chiudi e riapri il terminale**, poi riprova il comando
+3. ⚠️ **Su Windows** spunta la casella **"Add Python to PATH"** nella prima schermata dell'installazione
+4. **Chiudi e riapri il terminale**, poi riprova
 
-> Serve Python **3.8 o superiore**. Il numero dopo il primo punto deve essere almeno 8 (es. `3.8`, `3.11`, `3.13` vanno tutti bene).
+> Serve Python **3.8 o superiore**.
 
 ---
 
-## Passo 2 — Controlla di avere Git
-
-Git serve a scaricare il progetto. Scrivi:
+## Passo 3 — Controlla di avere Git
 
 ```bash
 git --version
 ```
 
-✅ **Se risponde** `git version 2.43.0` (o simile) → vai al Passo 3.
+✅ **Se risponde** `git version 2.43.0` (o simile) → vai al Passo 4.
 
-❌ **Se non è installato**, hai due possibilità:
-
-* **Opzione A (consigliata)**: installa Git da [git-scm.com/downloads](https://git-scm.com/downloads), poi riapri il terminale.
-* **Opzione B (senza Git)**: vai sulla [pagina del progetto](https://github.com/emanuelediluzio/downloadanddeleteallphotosicloud), clicca il pulsante verde **`Code`** → **`Download ZIP`**, poi estrai la cartella (per esempio sul Desktop) e **salta direttamente al Passo 4**.
+❌ **Se non è installato**:
+* **Opzione A (consigliata)**: installalo da [git-scm.com/downloads](https://git-scm.com/downloads), poi riapri il terminale.
+* **Opzione B (senza Git)**: apri la [pagina del progetto](https://github.com/emanuelediluzio/downloadanddeleteallphotosicloud), clicca il pulsante verde **`Code`** → **`Download ZIP`**, estrai la cartella sul Desktop e **salta al Passo 5**.
 
 ---
 
-## Passo 3 — Scarica il progetto (clone)
+## Passo 4 — Scarica il progetto
 
-### 3a. Scegli dove metterlo
-
-Prima di scaricare devi decidere **in quale cartella** finirà il progetto. Usiamo il **Desktop**, così lo vedi subito.
+### 4a. Spostati sul Desktop
 
 Il comando `cd` significa "*change directory*", cioè "spostati nella cartella".
 
@@ -97,108 +106,178 @@ Il comando `cd` significa "*change directory*", cioè "spostati nella cartella".
 ```bash
 cd ~/Desktop
 ```
-
 **Windows:**
 ```powershell
 cd $HOME\Desktop
 ```
 
-> `~` (macOS/Linux) e `$HOME` (Windows) sono scorciatoie che indicano la tua cartella utente personale.
-
-Per essere sicuro di dove ti trovi, scrivi:
-
-**macOS / Linux:**
-```bash
-pwd
-```
-**Windows:**
-```powershell
-Get-Location
-```
-
-Deve rispondere qualcosa che finisce con `/Desktop` (o `\Desktop`).
-
-### 3b. Scarica il progetto
-
-Ora scrivi (uguale su tutti i sistemi):
+### 4b. Scarica il progetto (clone)
 
 ```bash
 git clone https://github.com/emanuelediluzio/downloadanddeleteallphotosicloud.git
 ```
 
-Vedrai scorrere qualche riga tipo `Cloning into...`, `done.`.
-Sul tuo Desktop è ora comparsa una cartella chiamata `downloadanddeleteallphotosicloud`.
+Vedrai scorrere `Cloning into...` e poi `done.`. Sul Desktop è comparsa una cartella nuova.
 
-### 3c. Entra dentro la cartella appena scaricata
+### 4c. Entra nella cartella
 
 ```bash
 cd downloadanddeleteallphotosicloud
 ```
 
-Verifica di essere nel posto giusto elencando i file:
+Controlla di essere nel posto giusto:
 
-**macOS / Linux:**
-```bash
-ls
-```
-**Windows:**
-```powershell
-dir
-```
+**macOS / Linux:** `ls` — **Windows:** `dir`
 
-Devi vedere elencato **`photodeleter.py`** e **`requirements.txt`**. Se li vedi, sei nel punto giusto. 🎯
+Devi vedere **`photodeleter.py`** e **`requirements.txt`**. Se li vedi, sei nel punto giusto. 🎯
 
-> ⚠️ **Importante**: tutti i comandi dei passi successivi vanno dati **da dentro questa cartella**. Se chiudi il terminale e lo riapri, devi rifare `cd ~/Desktop/downloadanddeleteallphotosicloud` prima di continuare.
+> ⚠️ **Tutti i comandi successivi vanno dati da dentro questa cartella.** Se chiudi il terminale, ricordati di rifare `cd ~/Desktop/downloadanddeleteallphotosicloud`.
 
 ---
 
-## Passo 4 — Crea l'ambiente virtuale
+## Passo 5 — Crea l'ambiente virtuale
 
-Un "ambiente virtuale" è una scatola isolata dove installare le librerie del progetto senza sporcare il resto del computer. Su Mac e Linux recenti è **obbligatorio**, altrimenti Python rifiuta l'installazione.
+Un "ambiente virtuale" è una scatola isolata dove installare le librerie senza sporcare il resto del computer. Su Mac e Linux recenti è **obbligatorio**.
 
 **macOS / Linux:**
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 ```
-
 **Windows (PowerShell):**
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 ```
 
-✅ Se ha funzionato, all'inizio della riga del terminale compare la scritta **`(.venv)`**. Significa che sei dentro l'ambiente virtuale.
+✅ Se ha funzionato, a inizio riga compare **`(.venv)`**.
 
-> 🪟 **Se Windows dice** *"esecuzione di script disabilitata"*, scrivi questo comando e poi riprova ad attivare:
+> 🪟 **Se Windows dice** *"esecuzione di script disabilitata"*:
 > ```powershell
 > Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 > ```
 
-> 🔁 **Ogni volta che riapri il terminale** per usare lo script, devi rifare il comando di attivazione (`source .venv/bin/activate` oppure `.venv\Scripts\Activate.ps1`). Non devi invece ricreare il venv.
+> 🔁 **Ogni volta che riapri il terminale** devi rifare solo il comando di attivazione, non ricreare il venv.
 
 ---
 
-## Passo 5 — Installa le librerie necessarie
+## Passo 6 — Installa le librerie
 
-Con `(.venv)` visibile nella riga, scrivi:
+Con `(.venv)` visibile:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-Partirà il download di due librerie: `pyicloud` (per parlare con iCloud) e `rich` (per la grafica del terminale).
 Attendi finché non compare `Successfully installed ...`.
+
+**L'installazione è finita.** Ora scegli come proseguire:
+
+* 👉 **[PARTE 2 — Interfaccia grafica](#-parte-2--interfaccia-grafica-consigliata)** (consigliata)
+* 👉 **[PARTE 3 — Solo terminale](#️-parte-3--solo-terminale)**
 
 ---
 
-## Passo 6 — Avvia lo script
+# 🖼️ PARTE 2 — Interfaccia grafica (consigliata)
+
+## Passo 7 — Avvia con l'opzione `--web`
+
+**macOS / Linux:**
+```bash
+python3 photodeleter.py --web
+```
+**Windows:**
+```powershell
+python photodeleter.py --web
+```
+
+## Passo 8 — Inserisci le credenziali nel terminale
+
+Anche usando l'interfaccia grafica, **il login si fa nel terminale** (è più sicuro: la password non passa mai dal browser).
+
+Ti verranno chiesti:
+1. **📧 Apple ID** — la tua email Apple
+2. **🔑 Password** — 👀 *mentre digiti non vedrai comparire nulla, nemmeno i pallini: è normale, è una misura di sicurezza*
+3. **📁 Cartella di destinazione** — premi Invio per accettare `./Backup_iCloud`
+4. **🔐 Codice 2FA** — le 6 cifre che compaiono sul tuo iPhone/Mac
+
+## Passo 9 — Si apre il browser
+
+Quando compare:
+
+```text
+✓ Interfaccia web avviata.
+Apri questo indirizzo nel browser:
+http://127.0.0.1:8765/?t=xxxxxxxxxxxx
+```
+
+Il browser si apre da solo. Se non lo fa, **copia quell'indirizzo e incollalo** nella barra del browser.
+
+> 🔒 **Il server gira solo sul tuo computer**, non è raggiungibile da internet, e serve quel codice `?t=...` per accedere.
+
+## Passo 10 — Scegli le foto col mouse
+
+![Griglia dell'interfaccia](docs/web-1-griglia.png)
+
+Ecco tutti i modi per selezionare:
+
+| Cosa vuoi fare | Come si fa |
+|---|---|
+| Selezionare **una** foto | Clicca sopra |
+| Toglierla dalla selezione | Cliccala di nuovo |
+| Selezionare **un intervallo** | Clicca la prima, poi tieni premuto `Shift` e clicca l'ultima |
+| Aggiungerne una sparsa | Tieni premuto `Ctrl` (`Cmd` su Mac) e clicca |
+| Selezionare **in blocco col mouse** | Premi il tasto sinistro in uno spazio vuoto e **trascina** per disegnare un rettangolo |
+| Selezionare **tutto** | Pulsante `Seleziona tutto` oppure `Ctrl+A` (`Cmd+A`) |
+| Annullare la selezione | Pulsante `Deseleziona` oppure il tasto `Esc` |
+
+**Selezione trascinando il rettangolo:**
+
+![Selezione trascinando](docs/web-2-trascinamento.png)
+
+## Passo 11 — Filtra per data e tipo
+
+In alto puoi restringere ciò che vedi:
+* **Dal** / **Al** → mostra solo le foto di quel periodo
+* **Tipo** → foto e video, solo foto, solo video
+* Poi premi **`Applica filtri`** (o **`Azzera`** per rimuoverli)
+
+![Filtri](docs/web-4-filtri.png)
+
+## Passo 12 — Scarica quello che hai selezionato
+
+Premi **`⬇️ Scarica selezionati`**. Compare una finestra con la barra di avanzamento. I file vengono salvati ordinati per anno/mese/tipo.
+
+> ⏱️ Con tante foto può volerci parecchio. Lascia la finestra aperta.
+
+## Passo 13 — Elimina da iCloud (con doppia conferma)
+
+Premi **`🗑️ Elimina da iCloud`**. Per sicurezza il pulsante di conferma resta **bloccato** finché non spunti la casella che dichiara che hai già il backup:
+
+![Conferma di eliminazione](docs/web-3-conferma.png)
+
+> 🛑 **Prima di confermare**, apri la cartella `Backup_iCloud` con Finder/Esplora file e verifica che le foto ci siano davvero e si aprano. Una volta cancellate da iCloud non si torna indietro.
+
+⚠️ Le copie sul tuo computer **non vengono toccate**: viene rimosso solo ciò che sta su iCloud.
+
+## Passo 14 — Caricare foto su iCloud (opzionale)
+
+Premi **`⬆️ Carica su iCloud`**, scegli i file dal computer e verranno caricati nella tua libreria iCloud.
+
+## Passo 15 — Quando hai finito
+
+Torna nella finestra del terminale e premi **`Ctrl` + `C`** per spegnere il server.
+
+---
+
+# ⌨️ PARTE 3 — Solo terminale
+
+## Passo 7 — Avvia lo script
 
 **macOS / Linux:**
 ```bash
 python3 photodeleter.py
 ```
-
 **Windows:**
 ```powershell
 python photodeleter.py
@@ -206,54 +285,33 @@ python photodeleter.py
 
 Comparirà il riquadro azzurro con il titolo del programma. 🎉
 
----
+## Passo 8 — Inserisci i tuoi dati
 
-## Passo 7 — Inserisci i tuoi dati
+**1. `📧 Apple ID`** — l'email del tuo account Apple.
 
-Lo script ti farà tre domande, una alla volta.
+**2. `🔑 Password`** — 👀 *mentre digiti non vedrai comparire nulla, nemmeno i pallini. È normale: il terminale nasconde la password. Scrivi e premi Invio.*
 
-**1. `📧 Apple ID`**
-Scrivi l'email del tuo account Apple (es. `mario.rossi@icloud.com`) e premi Invio.
+**3. `📁 Cartella di destinazione`** — premi **Invio** per accettare `./Backup_iCloud`, oppure scrivi un percorso completo (es. `/Volumes/DiscoEsterno/Foto` su macOS, `D:\Foto` su Windows).
 
-**2. `🔑 Password`**
-Scrivi la password del tuo account Apple e premi Invio.
+## Passo 9 — Codice di verifica (2FA)
 
-> 👀 **Mentre digiti non vedrai comparire nulla**, nemmeno i pallini. È normale ed è una misura di sicurezza: il terminale nasconde la password. Scrivi e premi Invio anche se sembra che non stia scrivendo niente.
+Inserisci le **6 cifre** che compaiono sul tuo iPhone/Mac.
 
-**3. `📁 Cartella di destinazione`**
-È dove verranno salvate le foto. Tra parentesi vedi il valore predefinito `./Backup_iCloud`: premi semplicemente **Invio** per accettarlo e le foto finiranno in una cartella `Backup_iCloud` dentro la cartella del progetto.
+✅ Quando leggi `✓ Accesso effettuato con successo` sei dentro.
 
-> Se vuoi salvarle altrove, ad esempio su un disco esterno, scrivi il percorso completo, ad esempio:
-> * macOS: `/Volumes/DiscoEsterno/Foto`
-> * Windows: `D:\Foto`
+![Avvio e accesso](docs/01-avvio.svg)
 
----
+## Passo 10 — Scegli cosa scaricare ed eliminare
 
-## Passo 8 — Codice di verifica (2FA)
-
-Se il tuo account ha l'autenticazione a due fattori (quasi tutti ce l'hanno), sul tuo iPhone/Mac comparirà un avviso con un **codice a 6 cifre**.
-
-Scrivi quelle 6 cifre nel terminale e premi Invio.
-
-✅ Quando compare `✓ Accesso effettuato con successo` sei dentro. Lo script ti dirà quanti elementi ha trovato, per esempio `Trovati 3847 elementi su iCloud.`
-
----
-
-## Passo 9 — Scegli cosa scaricare ed eliminare
-
-Prima di iniziare, lo script ti chiede **quali elementi** vuoi elaborare. Puoi lavorare su tutta la libreria oppure solo su una parte.
-
-**Prima domanda — il periodo:**
 ```text
 Quali elementi vuoi elaborare?
   1) Tutta la libreria
   2) Solo un intervallo di date
 Scelta [1/2] (1):
 ```
-* Premi **Invio** (o scrivi `1`) per prendere tutto.
-* Scrivi **`2`** per scegliere un periodo: ti verranno chieste una **data di inizio** e una **data di fine**, da scrivere nel formato `GG/MM/AAAA` (per esempio `01/01/2020`). Se premi Invio senza scrivere niente, quel limite non viene applicato: lasciando vuota la data di fine, per esempio, prende tutto "dal 01/01/2020 in poi".
+* Premi **Invio** (o `1`) per prendere tutto.
+* Scrivi **`2`** per un periodo: ti chiederà **data di inizio** e **data di fine** nel formato `GG/MM/AAAA` (es. `01/01/2020`). Lasciando vuota una delle due, quel limite non viene applicato.
 
-**Seconda domanda — il tipo di file:**
 ```text
 Quale tipo di media?
   1) Foto e video
@@ -262,57 +320,36 @@ Quale tipo di media?
 Scelta [1/2/3] (1):
 ```
 
-Lo script ti dirà quanti elementi hai selezionato, per esempio `Selezionati 412 elementi su 3847`.
+> 🔒 **La selezione vale per entrambe le fasi**: se scegli "solo il 2020", verranno scaricate *e* poi eliminate soltanto le foto del 2020. **Il resto della libreria non viene toccato.**
 
-> 🔒 **La selezione vale per entrambe le fasi.** Se scegli "solo il 2020", verranno scaricate *e* poi eliminate soltanto le foto del 2020: **tutto il resto della libreria iCloud non viene toccato**. Questo ti permette di svuotare iCloud un pezzo alla volta, in sicurezza.
-
----
-
-## Passo 10 — Aspetta il download (Fase 1)
-
-Parte il download. Vedrai una barra che avanza:
+## Passo 11 — Aspetta il download
 
 ![Fase di download](docs/02-download.svg)
 
-Cosa significano i numeri, da sinistra a destra:
+I numeri da sinistra a destra:
 * **`2385/3847`** → file scaricati su totale
 * **`0:08:32`** → da quanto sta lavorando
 * **`0:05:14`** → **quanto manca** (stima)
 
-⏱️ Con migliaia di foto può volerci **anche qualche ora**. Puoi lasciare la finestra aperta e fare altro.
+**Righe gialle** `⚠ Riprovo tra 30s` → normale: i server Apple sono occupati, riprova da solo.
 
-**Se vedi righe gialle** tipo `⚠ Errore ... Riprovo tra 30s` → è tutto normale: i server Apple ogni tanto rallentano e lo script riprova da solo. Non toccare nulla.
+**Puoi interrompere** con `Ctrl` + `C` e riprendere più tardi: i file già scaricati verranno saltati.
 
-**Puoi interrompere quando vuoi** premendo `Ctrl` + `C`. Per riprendere in seguito basta rilanciare lo script: i file già scaricati verranno saltati e ripartirà da dove era rimasto.
-
----
-
-## Passo 11 — Controlla il riepilogo
-
-A fine download compare la tabella riassuntiva:
+## Passo 12 — Controlla il riepilogo e conferma
 
 ![Riepilogo e conferma](docs/03-riepilogo.svg)
 
-> 🛑 **FERMATI E CONTROLLA QUI.** Prima di rispondere alla domanda successiva, apri la cartella `Backup_iCloud` con il tuo file manager (Finder su Mac, Esplora file su Windows) e verifica con i tuoi occhi che le foto ci siano davvero e si aprano correttamente. Una volta cancellate da iCloud non si torna indietro.
+> 🛑 **FERMATI E CONTROLLA.** Apri la cartella `Backup_iCloud` e verifica con i tuoi occhi che le foto ci siano e si aprano, prima di rispondere.
 
----
-
-## Passo 12 — Decidi se cancellare da iCloud (Fase 2)
-
-Lo script chiede: **`Procedere con l'eliminazione da iCloud? [y/n] (n):`**
-
-* Scrivi **`n`** (oppure premi solo Invio) → **non cancella niente**. Le foto restano sia sul PC che su iCloud. Il programma termina.
-* Scrivi **`y`** → cancella le foto **da iCloud**. ⚠️ **Le copie scaricate sul tuo computer NON vengono toccate**, restano al sicuro.
-
-Se hai scelto `y`, parte la seconda barra di progresso e alla fine vedrai `Pulizia iCloud completata`.
+Alla domanda `Procedere con l'eliminazione da iCloud? [y/n] (n):`
+* **`n`** o solo Invio → non cancella niente ed esce
+* **`y`** → cancella da iCloud (le copie locali restano intatte)
 
 ![Fase di eliminazione](docs/04-eliminazione.svg)
 
-**Hai finito.** 🎉
-
 ---
 
-## Passo 13 — Dove sono finite le mie foto?
+# 📁 Dove finiscono le foto
 
 Nella cartella che hai scelto, ordinate per anno, mese e tipo:
 
@@ -335,25 +372,24 @@ Backup_iCloud/
 
 ---
 
-## 🔄 Come rilanciarlo in futuro
+# 🔄 Come rilanciarlo in futuro
 
-Riapri il terminale e dai questi tre comandi in fila:
+Riapri il terminale e dai i comandi in fila:
 
 **macOS / Linux:**
 ```bash
 cd ~/Desktop/downloadanddeleteallphotosicloud
 source .venv/bin/activate
-python3 photodeleter.py
+python3 photodeleter.py --web      # oppure senza --web per il terminale
 ```
-
 **Windows:**
 ```powershell
 cd $HOME\Desktop\downloadanddeleteallphotosicloud
 .venv\Scripts\Activate.ps1
-python photodeleter.py
+python photodeleter.py --web
 ```
 
-Email e cartella di destinazione te le ricorderà lui: basta premere Invio per confermarle.
+Email e cartella di destinazione te le ricorderà lui: basta premere Invio.
 
 ---
 
@@ -361,14 +397,17 @@ Email e cartella di destinazione te le ricorderà lui: basta premere Invio per c
 
 | Messaggio d'errore | Cosa significa e come si risolve |
 |---|---|
-| `command not found: python3` <br> `python non è riconosciuto` | Python non è installato o non è nel PATH → rifai il **Passo 1**. Su Windows reinstalla spuntando *"Add Python to PATH"* |
-| `No such file or directory: photodeleter.py` | Non sei dentro la cartella del progetto → rifai `cd ~/Desktop/downloadanddeleteallphotosicloud` (**Passo 3c**) |
-| `externally-managed-environment` | Stai installando fuori dall'ambiente virtuale → rifai il **Passo 4** e controlla che compaia `(.venv)` |
-| `✗ Credenziali errate` | Email o password sbagliate. Se sei sicuro che siano giuste, genera una **password per app** dalla sezione sicurezza del tuo account su `appleid.apple.com` e usa quella |
-| `✗ Codice non valido` | Il codice a 6 cifre è scaduto o digitato male → rilancia lo script e usa il nuovo codice |
-| `esecuzione di script è disabilitata` (Windows) | Esegui `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` e riprova ad attivare il venv |
-| `✗ Errore filesystem locale` | Disco pieno o permessi negati → libera spazio o scegli un'altra cartella di destinazione |
-| Righe gialle `⚠ Riprovo tra 30s` | **Non è un errore.** I server Apple sono occupati, lo script riprova da solo. Aspetta |
+| `command not found: python3` <br> `python non è riconosciuto` | Python non installato o non nel PATH → rifai il **Passo 2**. Su Windows reinstalla spuntando *"Add Python to PATH"* |
+| `No such file or directory: photodeleter.py` | Non sei nella cartella del progetto → `cd ~/Desktop/downloadanddeleteallphotosicloud` |
+| `externally-managed-environment` | Stai installando fuori dall'ambiente virtuale → rifai il **Passo 5**, deve comparire `(.venv)` |
+| `✗ Manca la libreria Flask` | Non hai installato le dipendenze → rifai il **Passo 6** |
+| `✗ Credenziali errate` | Email o password sbagliate. Se sei sicuro, genera una **password per app** dalla sezione sicurezza del tuo account su `appleid.apple.com` |
+| `✗ Codice non valido` | Il codice 2FA è scaduto → rilancia e usa il nuovo codice |
+| `Address already in use` (porta occupata) | Un altro programma usa la porta → avvia con `--porta 9000` |
+| La pagina dice *"Impossibile contattare il server"* | Hai aperto l'indirizzo senza il codice `?t=...` → ricopia il link completo dal terminale |
+| `esecuzione di script è disabilitata` (Windows) | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`, poi riattiva il venv |
+| `✗ Errore filesystem locale` | Disco pieno o permessi negati → libera spazio o cambia cartella |
+| Righe gialle `⚠ Riprovo tra 30s` | **Non è un errore.** Server Apple occupati, riprova da solo. Aspetta |
 
 ---
 
@@ -376,7 +415,7 @@ Email e cartella di destinazione te le ricorderà lui: basta premere Invio per c
 
 ## Selezione da riga di comando
 
-Puoi passare i filtri direttamente al comando, saltando le domande del Passo 9:
+Puoi passare i filtri direttamente al comando, saltando le domande:
 
 ```bash
 # Solo il 2020, foto e video
@@ -385,30 +424,26 @@ python3 photodeleter.py --da 01/01/2020 --a 31/12/2020
 # Tutti i video precedenti al 2019
 python3 photodeleter.py --a 31/12/2018 --tipo video
 
-# Solo le foto (di qualsiasi data)
+# Solo le foto, di qualsiasi data
 python3 photodeleter.py --tipo foto
 
-# Dal 2023 in poi
-python3 photodeleter.py --da 01/01/2023
+# Interfaccia grafica su una porta diversa
+python3 photodeleter.py --web --porta 9000
 ```
 
 | Argomento | Descrizione |
 |---|---|
-| `--da GG/MM/AAAA` | Elabora solo gli elementi da questa data in poi |
-| `--a GG/MM/AAAA` | Elabora solo gli elementi fino a questa data |
+| `--web` | Avvia l'interfaccia grafica nel browser |
+| `--porta N` | Porta dell'interfaccia web (predefinita: 8765) |
+| `--da GG/MM/AAAA` | Elabora solo da questa data in poi |
+| `--a GG/MM/AAAA` | Elabora solo fino a questa data |
 | `--tipo {tutti,foto,video}` | Limita a sole foto o soli video |
 
-Sono accettati anche i formati `AAAA-MM-GG` e `GG-MM-AAAA`. Le date sono **inclusive**: `--da 01/01/2020 --a 31/12/2020` comprende sia il 1° gennaio sia il 31 dicembre.
+Accettati anche i formati `AAAA-MM-GG` e `GG-MM-AAAA`. Le date sono **inclusive**.
 
-Per l'elenco completo delle opzioni:
-
-```bash
-python3 photodeleter.py --help
-```
+Elenco completo delle opzioni: `python3 photodeleter.py --help`
 
 ## Variabili d'ambiente (per automazioni)
-
-Per evitare i prompt interattivi:
 
 **macOS / Linux:**
 ```bash
@@ -417,7 +452,6 @@ export ICLOUD_PASSWORD="tua_password"
 export ICLOUD_BACKUP_PATH="./Backup_iCloud"
 python3 photodeleter.py
 ```
-
 **Windows (PowerShell):**
 ```powershell
 $env:ICLOUD_EMAIL="tuo_id@icloud.com"
@@ -426,33 +460,30 @@ $env:ICLOUD_BACKUP_PATH=".\Backup_iCloud"
 python photodeleter.py
 ```
 
-| Variabile | Descrizione |
-|---|---|
-| `ICLOUD_EMAIL` | Apple ID |
-| `ICLOUD_PASSWORD` | Password (o password specifica per app) |
-| `ICLOUD_BACKUP_PATH` | Cartella locale di destinazione |
-
-> ⚠️ Usando questo metodo la password resta nella cronologia della shell. Preferisci il metodo interattivo se il computer è condiviso.
+> ⚠️ Con questo metodo la password resta nella cronologia della shell. Preferisci il metodo interattivo se il computer è condiviso.
 
 ## Impostazioni memorizzate
 
-Email e cartella di destinazione vengono salvate in `~/.icloud_photodeleter_config.json` e riproposte come predefinite. **La password non viene mai salvata su disco.** Per azzerare le impostazioni, cancella quel file.
+Email e cartella di destinazione vengono salvate in `~/.icloud_photodeleter_config.json`. **La password non viene mai salvata su disco.** Per azzerare, cancella quel file.
 
 ## Gestione degli errori
 
-Lo script distingue tre tipi di problema, per non restare mai bloccato all'infinito:
-
 | Tipo di errore | Comportamento |
 |---|---|
-| **Rete / server occupato** (503, connessione persa) | Ritenta automaticamente con attesa progressiva (5s → 10s → 30s), senza perdere nessun file |
-| **Autenticazione / permessi** (401, 403) | Ritenta 3 volte, poi salta il file e lo segnala: viene **escluso dall'eliminazione** su iCloud |
-| **Disco locale** (spazio esaurito, permessi negati) | Interrompe subito lo script con un messaggio chiaro, invece di ritentare a vuoto |
+| **Rete / server occupato** (503, connessione persa) | Ritenta con attesa progressiva (5s → 10s → 30s), senza perdere file |
+| **Autenticazione / permessi** (401, 403) | Ritenta 3 volte, poi salta il file: viene **escluso dall'eliminazione** |
+| **Disco locale** (spazio esaurito, permessi) | Interrompe subito con un messaggio chiaro |
 
 I file da 0 byte (download corrotti) vengono rilevati e riscaricati automaticamente.
 
-## Rigenerare gli screenshot
+## Note tecniche sull'interfaccia web
 
-Se modifichi l'interfaccia, aggiorna le immagini del README con:
+* Il server ascolta **solo su `127.0.0.1`** (il tuo computer), non è raggiungibile dalla rete.
+* Ogni avvio genera un **codice di accesso casuale** richiesto da tutte le chiamate API.
+* Le miniature vengono messe in cache nella sottocartella nascosta `.miniature` della cartella di destinazione, così al secondo avvio si caricano subito.
+* Le miniature si scaricano **solo quando compaiono sullo schermo**, per non intasare la connessione con librerie grandi.
+
+## Rigenerare gli screenshot del terminale
 
 ```bash
 python docs/generate_screenshots.py
@@ -462,15 +493,16 @@ python docs/generate_screenshots.py
 
 # ⚠️ Avvertenze importanti
 
-* **Verifica lo spazio libero**: una libreria iCloud può pesare decine o centinaia di GB. Controlla di avere spazio sufficiente **prima** di iniziare.
-* **L'eliminazione è definitiva**: una volta confermata con `y`, i file passano nel cestino di iCloud o vengono rimossi in modo permanente a seconda delle impostazioni del tuo account.
+* **Verifica lo spazio libero**: una libreria iCloud può pesare decine o centinaia di GB.
+* **L'eliminazione è definitiva**: i file passano nel cestino di iCloud o vengono rimossi permanentemente a seconda delle impostazioni del tuo account.
 * **Controlla sempre il backup prima di cancellare**: apri la cartella e verifica che le foto ci siano e si aprano.
-* **Connessione stabile**: meglio via cavo o Wi-Fi affidabile. In caso di interruzione, comunque, lo script riprende da dove era rimasto.
+* **Connessione stabile**: meglio via cavo o Wi-Fi affidabile. In caso di interruzione lo script riprende da dove era rimasto.
 
 ---
 
 # 🔮 Roadmap / To-Do
 
 * **☁️ Supporto Multi-Cloud**: caricamento diretto su Google Drive, OneDrive e Dropbox.
-* **🔄 Streaming Transfer**: trasferimento "pipe" da iCloud al cloud di destinazione senza salvare i file in locale.
+* **🔄 Streaming Transfer**: trasferimento "pipe" da iCloud al cloud di destinazione senza salvare in locale.
 * **🔐 Crittografia (opzionale)**: cifratura dei file prima dell'upload sul cloud di destinazione.
+* **▶️ Anteprima video** nell'interfaccia grafica.

@@ -13,6 +13,8 @@ Il progetto è impacchettato come pacchetto Python vero e proprio (`pyproject.to
 
 Tutto il testo rivolto all'utente (messaggi, README, commenti nel codice quando servono) è **in italiano**. Mantieni questa convenzione in ogni modifica.
 
+> Se lavori con Claude Code, questo repository include anche una skill di progetto: **[`.claude/skills/icloud-photo-backup-dev/SKILL.md`](.claude/skills/icloud-photo-backup-dev/SKILL.md)**. Rispetto a questo file (guida da leggere) è pensata per essere eseguita passo passo: contiene i comandi pronti per il setup demo, il modello di foto/video finto da usare nei test e le verifiche Playwright collaudate. Usala prima di dichiarare "fatto" su una modifica a `src/icloud_photo_backup/` o `web/`.
+
 ## Struttura del repository
 
 ```

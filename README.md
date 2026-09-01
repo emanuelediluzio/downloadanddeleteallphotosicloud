@@ -551,6 +551,13 @@ I file da 0 byte (download corrotti) vengono rilevati e riscaricati automaticame
 python docs/generate_screenshots.py
 ```
 
+## 🤖 Contribuire con un agente AI (Claude Code e simili)
+
+Il repository include due file pensati per chi sviluppa con l'aiuto di un agente AI:
+
+* **[`AGENTS.md`](AGENTS.md)** — struttura del progetto, convenzioni di sicurezza da non violare, come testare senza credenziali iCloud reali.
+* **[`.claude/skills/icloud-photo-backup-dev/`](.claude/skills/icloud-photo-backup-dev/SKILL.md)** — una skill per [Claude Code](https://claude.com/claude-code) con la procedura di test collaudata su questo progetto (foto/video finti, server demo, verifica con Playwright). Chi clona il repo e lavora con Claude Code la trova già disponibile in automatico; se vuoi solo prenderla per un altro progetto, il file è liberamente copiabile.
+
 ---
 
 # ⚠️ Avvertenze importanti
